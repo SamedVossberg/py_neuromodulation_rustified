@@ -1,5 +1,6 @@
 """Module for offline data streams."""
 
+import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -7,6 +8,7 @@ from py_neuromodulation.nm_generator import LSLStream
 from py_neuromodulation.nm_stream_abc import NMStream
 from py_neuromodulation.nm_types import _PathLike
 from py_neuromodulation import logger
+from py_neuromodulation import nm_generator_ucsf
 
 from mne_lsl.stream_viewer import StreamViewer
 
@@ -121,6 +123,7 @@ class _GenericStream(NMStream):
 
     def _run(
         self,
+        file_name_ts: _PathLike,
         data: np.ndarray | pd.DataFrame | None = None,
         out_path_root: _PathLike = "",
         folder_name: str = "sub",
@@ -139,6 +142,8 @@ class _GenericStream(NMStream):
                 settings=self.settings,
                 sfreq=self.sfreq,
             )
+            gen_reader = nm_generator_ucsf.UCSFReader(file_name_ts)
+            generator = gen_reader.read_chunks()
         else:
             self.lsl_stream = LSLStream(
                 settings=self.settings, stream_name=stream_lsl_name
@@ -185,10 +190,16 @@ class _GenericStream(NMStream):
 
         else:
             l_features : list[pd.Series] = []
-            cnt_samples = offset_start
-            start_time = None
+
             while True:
                 next_item = next(generator, None)
+
+                # check if the next item is a tuple
+                if isinstance(next_item, tuple) is False:
+                    feature_df = pd.DataFrame(l_features)
+                    feature_df.to_csv(os.path.join(out_path_root, f"{folder_name}_{next_item}.csv"))
+                    l_features = []
+                    continue
 
                 if next_item is not None:
                     time_, data_batch = next_item
@@ -201,22 +212,10 @@ class _GenericStream(NMStream):
                     data_batch.astype(np.float64)
                 )
 
-                # start_time = time_[0] if start_time is None else start_time
-
-                # feature_series["time"] = (
-                #     time_[-1] - start_time
-                # )  # check if results in same
-                feature_series = self._add_timestamp(
-                   feature_series, cnt_samples  
-                )
-
-                feature_series = self._add_target(
-                    feature_series=feature_series, data=data_batch
-                )
+                feature_series["timestamp"] = time_
 
                 l_features.append(feature_series)
 
-                cnt_samples += sample_add
         feature_df = pd.DataFrame(l_features)
 
         self.save_after_stream(out_path_root, folder_name, feature_df)
@@ -326,10 +325,10 @@ class Stream(_GenericStream):
             from py_neuromodulation.nm_define_nmchannels import get_default_channels_from_data
             nm_channels = get_default_channels_from_data(data)
 
-        if nm_channels is None and data is None:
-            raise ValueError(
-                "Either `nm_channels` or `data` must be passed to `Stream`."
-            )
+        # if nm_channels is None and data is None:
+        #     raise ValueError(
+        #         "Either `nm_channels` or `data` must be passed to `Stream`."
+        #     )
 
         super().__init__(
             sfreq=sfreq,
@@ -349,6 +348,7 @@ class Stream(_GenericStream):
 
     def run(
         self,
+        file_name_ts: _PathLike,
         data: np.ndarray | pd.DataFrame | None = None,
         out_path_root: _PathLike = Path.cwd(),
         folder_name: str = "sub",
@@ -385,8 +385,8 @@ class Stream(_GenericStream):
             data = self._handle_data(data)
         elif self.data is not None:
             data = self._handle_data(self.data)
-        elif self.data is None and data is None and self.stream_lsl is False:
-            raise ValueError("No data passed to run function.")
+        #elif self.data is None and data is None and self.stream_lsl is False:
+        #    raise ValueError("No data passed to run function.")
 
         if parallel:
             self._check_settings_for_parallel()
@@ -396,6 +396,7 @@ class Stream(_GenericStream):
         logger.log_to_file(out_path)
 
         return self._run(
+            file_name_ts,
             data,
             out_path_root,
             folder_name,

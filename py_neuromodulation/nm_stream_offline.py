@@ -12,6 +12,7 @@ from py_neuromodulation import nm_generator_ucsf
 
 from mne_lsl.stream_viewer import StreamViewer
 
+
 class _GenericStream(NMStream):
     """_GenericStream base class.
     This class can be inhereted for different types of offline streams
@@ -59,7 +60,7 @@ class _GenericStream(NMStream):
         feature_series["time"] = cnt_samples * 1000 / self.sfreq
 
         if self.verbose:
-            logger.info("%.2f seconds of data processed", feature_series['time'] / 1000)
+            logger.info("%.2f seconds of data processed", feature_series["time"] / 1000)
 
         return feature_series
 
@@ -112,9 +113,7 @@ class _GenericStream(NMStream):
         # if isinstance(data_batch, tuple):
         #     data_batch = np.array(data_batch[1])
 
-        feature_series = self.run_analysis.process(
-            data_batch[1].astype(np.float64)
-        )
+        feature_series = self.run_analysis.process(data_batch[1].astype(np.float64))
         feature_series = self._add_timestamp(feature_series, cnt_samples)
         feature_series = self._add_target(
             feature_series=feature_series, data=data_batch[1]
@@ -137,11 +136,11 @@ class _GenericStream(NMStream):
         from py_neuromodulation.nm_generator import raw_data_generator
 
         if stream_lsl is False:
-            #generator = raw_data_generator(
+            # generator = raw_data_generator(
             #    data=data,
             #    settings=self.settings,
             #    sfreq=self.sfreq,
-            #)
+            # )
             gen_reader = nm_generator_ucsf.UCSFReader(file_name_ts)
             generator = gen_reader.read_chunks()
         else:
@@ -152,7 +151,7 @@ class _GenericStream(NMStream):
             if plot_lsl:
                 viewer = StreamViewer(stream_name=stream_lsl_name)
                 viewer.start()
-            
+
             if self.sfreq != self.lsl_stream.stream.sinfo.sfreq:
                 error_msg = (
                     f"Sampling frequency of the lsl-stream ({self.lsl_stream.stream.sinfo.sfreq}) "
@@ -160,7 +159,7 @@ class _GenericStream(NMStream):
                 )
                 logger.critical(error_msg)
                 raise Exception(error_msg)
-            
+
             generator = self.lsl_stream.get_next_batch()
 
         sample_add = self.sfreq / self.run_analysis.sfreq_features
@@ -173,11 +172,10 @@ class _GenericStream(NMStream):
 
             from joblib import Parallel, delayed
             from itertools import count
+
             # parallel processing can not be utilized if a LSL stream is used
             if stream_lsl is True:
-                error_msg = (
-                    "Parallel processing is not possible with LSL stream."
-                )
+                error_msg = "Parallel processing is not possible with LSL stream."
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
@@ -189,25 +187,32 @@ class _GenericStream(NMStream):
             )
 
         else:
-            l_features : list[pd.Series] = []
+            l_features: list[pd.Series] = []
 
             while True:
                 next_item = next(generator, None)
 
+                if next_item is None:
+                    break
                 # check if the next item is a tuple
                 if isinstance(next_item, tuple) is False:
                     feature_df = pd.DataFrame(l_features)
                     # check if the feature_df is empty or has no rows
                     if feature_df.empty or feature_df.shape[0] == 0:
                         continue
-                    feature_df.to_csv(os.path.join(out_path_root, f"{folder_name}_{next_item}.csv"))
+                    str_save = f"{folder_name}_{next_item}.csv"
+                    # replace all colon with underscore
+                    str_save = str_save.replace(":", "_")
+                    str_save = str_save.replace("-", "_")
+
+                    feature_df.to_csv(os.path.join(out_path_root, str_save))
                     l_features = []
                     continue
 
                 if next_item is not None:
                     time_, data_batch = next_item
                 else:
-                    break 
+                    break
 
                 if data_batch is None:
                     break
@@ -220,8 +225,10 @@ class _GenericStream(NMStream):
                 l_features.append(feature_series)
 
         feature_df = pd.DataFrame(l_features)
-
-        self.save_after_stream(out_path_root, folder_name, feature_df)
+        if feature_df.empty or feature_df.shape[0] == 0:
+            return feature_df
+        str_save = f"{folder_name}_final.csv"
+        feature_df.to_csv(os.path.join(out_path_root, str_save))
 
         return feature_df
 
@@ -271,7 +278,7 @@ class _GenericStream(NMStream):
 
         from mne import create_info
         from mne.io import RawArray
-        
+
         info = create_info(ch_names=ch_names, sfreq=sfreq, ch_types=ch_types)
         raw = RawArray(data, info)
 
@@ -325,7 +332,10 @@ class Stream(_GenericStream):
         """
 
         if nm_channels is None and data is not None:
-            from py_neuromodulation.nm_define_nmchannels import get_default_channels_from_data
+            from py_neuromodulation.nm_define_nmchannels import (
+                get_default_channels_from_data,
+            )
+
             nm_channels = get_default_channels_from_data(data)
 
         # if nm_channels is None and data is None:
@@ -338,11 +348,11 @@ class Stream(_GenericStream):
             nm_channels=nm_channels,
             settings=settings,
             line_noise=line_noise,
-            sampling_rate_features_hz = sampling_rate_features_hz,
-            path_grids = path_grids,
-            coord_names = coord_names,
-            coord_list = coord_list,
-            verbose = verbose,
+            sampling_rate_features_hz=sampling_rate_features_hz,
+            path_grids=path_grids,
+            coord_names=coord_names,
+            coord_list=coord_list,
+            verbose=verbose,
         )
 
         self.data = data
@@ -388,7 +398,7 @@ class Stream(_GenericStream):
             data = self._handle_data(data)
         elif self.data is not None:
             data = self._handle_data(self.data)
-        #elif self.data is None and data is None and self.stream_lsl is False:
+        # elif self.data is None and data is None and self.stream_lsl is False:
         #    raise ValueError("No data passed to run function.")
 
         if parallel:

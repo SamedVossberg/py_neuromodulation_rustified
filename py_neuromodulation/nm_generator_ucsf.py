@@ -6,7 +6,8 @@ import scipy.stats as stats
 import os
 from matplotlib import pyplot as plt
 import matplotlib
-matplotlib.use('qtagg')
+
+matplotlib.use("qtagg")
 
 
 class UCSFReader:
@@ -21,18 +22,17 @@ class UCSFReader:
                 df[col] = None
         return df
 
+    def read_chunks(self, chunk_size: int = 1000000):  # 1000000
 
-    def read_chunks(self, chunk_size: int=1000000):
-        
         with pd.read_csv(
             self.path,
             chunksize=chunk_size,
             index_col=0,
         ) as reader:
-
+            # yield None
             for df in reader:
                 self.idx += 1
-                #df.set_index("timestamp", inplace=True)
+                # df.set_index("timestamp", inplace=True)
                 df.index = pd.to_datetime(df.index)
                 df_r = df.resample("4ms").ffill(limit=1)
                 # find indices of 10 second intervals
@@ -42,11 +42,11 @@ class UCSFReader:
                     yield start_  # initiate save
 
                 idx_10s = pd.date_range(start=start_, freq="10s", end=df_r.index[-1])
-                # iterate through the 10 s intervals and extract the data 
+                # iterate through the 10 s intervals and extract the data
                 for idx, idx_time in enumerate(idx_10s, start=1):
                     if idx == idx_10s.shape[0]:
                         break
-                    t_low = idx_10s[idx-1]
+                    t_low = idx_10s[idx - 1]
                     t_high = idx_10s[idx]
                     df_r_ = df_r.loc[t_low:t_high]
 
@@ -58,5 +58,4 @@ class UCSFReader:
                         yield df_r_f.index[-1], np.array(df_r_f).T
                     else:
                         continue
-            
         yield None

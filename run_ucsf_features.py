@@ -46,7 +46,9 @@ if __name__ == "__main__":
         PATH_DATA_TS, f"{sub_}_3daysprint_ts.csv"
     )
     
+    
     PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out"
+    PATH_OUT = os.path.join(PATH_OUT, sub_)
 
     with pd.read_csv(
         filename,

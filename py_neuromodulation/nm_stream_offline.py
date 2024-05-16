@@ -137,11 +137,11 @@ class _GenericStream(NMStream):
         from py_neuromodulation.nm_generator import raw_data_generator
 
         if stream_lsl is False:
-            generator = raw_data_generator(
-                data=data,
-                settings=self.settings,
-                sfreq=self.sfreq,
-            )
+            #generator = raw_data_generator(
+            #    data=data,
+            #    settings=self.settings,
+            #    sfreq=self.sfreq,
+            #)
             gen_reader = nm_generator_ucsf.UCSFReader(file_name_ts)
             generator = gen_reader.read_chunks()
         else:
@@ -197,6 +197,9 @@ class _GenericStream(NMStream):
                 # check if the next item is a tuple
                 if isinstance(next_item, tuple) is False:
                     feature_df = pd.DataFrame(l_features)
+                    # check if the feature_df is empty or has no rows
+                    if feature_df.empty or feature_df.shape[0] == 0:
+                        continue
                     feature_df.to_csv(os.path.join(out_path_root, f"{folder_name}_{next_item}.csv"))
                     l_features = []
                     continue

@@ -22,7 +22,7 @@ class UCSFReader:
         return df
 
 
-    def read_chunks(self, chunk_size: int=100000):
+    def read_chunks(self, chunk_size: int=1000000):
         
         with pd.read_csv(
             self.path,
@@ -58,3 +58,5 @@ class UCSFReader:
                         yield df_r_f.index[-1], np.array(df_r_f).T
                     else:
                         continue
+            
+        yield None

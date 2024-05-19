@@ -5,10 +5,14 @@ import numpy as np
 import pandas as pd
 import joblib
 
+cortex_ch_names = ['8-9', '8-10', '10-11', '9-11', '8-11', '9-10']
+subcortex_ch_names = ['0-2', '0-1', '1-3', '2-3', '0-3']
 
 def stream_init(ch_names):
 
-    # channel_names = ['0-2', '0-1', '1-3', '2-3', '0-3', '8-9', '8-10', '10-11', '9-11', '8-11', '9-10']
+    available_cortical_cn_names = [ch for ch in ch_names if ch in cortex_ch_names]
+    available_subcortical_cn_names = [ch for ch in ch_names if ch in subcortex_ch_names]
+
     data = np.random.rand(len(ch_names), 1000)
 
     nm_channels = nm_define_nmchannels.get_default_channels_from_data(
@@ -41,23 +45,27 @@ def stream_init(ch_names):
         "high gamma": [90, 105],
     }
     stream.settings["features"]["fooof"] = True
-    stream.settings["features"]["coherence"] = True
-    stream.settings["coherence"]["frequency_bands"] = [
-        "theta",
-        "alpha",
-        "low beta",
-        "high beta",
-        "low gamma",
-        "high gamma",
-    ]
     # ["0-2", "0-1", "1-3", "2-3", "0-3", "8-9", "8-10", "10-11", "9-11", "8-11", "9-10"]
 
-    stream.settings["coherence"]["channels"] = [
-        ["0-2", "8-10"],
-        ["0-1", "8-9"],
-        ["2-3", "10-11"],
-        ["1-3", "9-11"],
-    ]
+    coh_pairs = []
+    if len(available_cortical_cn_names) > 1 and len(available_subcortical_cn_names) > 1:
+        coh_pairs.append([available_subcortical_cn_names[0], available_cortical_cn_names[0]])
+        coh_pairs.append([available_subcortical_cn_names[1], available_cortical_cn_names[1]])
+    elif len(available_cortical_cn_names) > 0 and len(available_subcortical_cn_names) > 0:
+        coh_pairs.append([available_subcortical_cn_names[0], available_cortical_cn_names[0]])
+    if len(coh_pairs) > 0:
+        stream.settings["features"]["coherence"] = True
+        stream.settings["coherence"]["frequency_bands"] = [
+            "theta",
+            "alpha",
+            "low beta",
+            "high beta",
+            "low gamma",
+            "high gamma",
+        ]
+
+        stream.settings["coherence"]["channels"] = coh_pairs
+
 
     return stream
 
@@ -85,19 +93,20 @@ def process_sub(sub_):
     stream.run(filename, out_path_root=PATH_OUT, folder_name=sub_)
 
 
-ICN2 = True
+ICN2 = False
 
 if ICN2 is True:
     PATH_DATA_TS = r"\\10.39.42.199\Public\UCSF\time series"
     PATH_OUT_ = r"\\10.39.42.199\Public\UCSF\features"
 else:
-    PATH_DATA_TS = "/Users/Timon/Documents/UCSF_Analysis/Sandbox"
+    PATH_DATA_TS = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/raw data"
     PATH_OUT_ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out"
 
 if __name__ == "__main__":
 
-    sub_list = [f[:6] for f in os.listdir(PATH_DATA_TS) if f.endswith("_ts.csv")]
+    sub_list = [f[:6] for f in os.listdir(PATH_DATA_TS) if f.endswith("_ts.csv") and os.path.exists(os.path.join(PATH_OUT_, f[:6])) is False]
 
-    # process_sub(sub_list[0])
-    # parallelize process_sub with joblib
-    joblib.Parallel(n_jobs=32)(joblib.delayed(process_sub)(sub_) for sub_ in sub_list)
+    process_sub(sub_list[0])
+
+    #n_jobs = joblib.cpu_count()
+    #joblib.Parallel(n_jobs=len(sub_list))(joblib.delayed(process_sub)(sub_) for sub_ in sub_list)

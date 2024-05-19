@@ -169,3 +169,7 @@ requirements.lock
 requirements-dev.lock
 
 docs/source/bin/pandoc
+
+catboost_info/*
+figures_ucsf/*
+out_per/*

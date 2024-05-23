@@ -4,8 +4,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn import linear_model, metrics, model_selection, ensemble
 from scipy import stats
+import warnings
+
+warnings.filterwarnings('error')
 
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged"
+PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std"
 PATH_READ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out"
 PATH_PKG = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/pkg data"
 
@@ -18,6 +22,10 @@ def merge_df_with_pkg(sub_ = "rcs02l"):
 
     # drop rows that contain NaT in the index
     df = df[~df.index.isnull()]
+    # for each column that contains "fooof_a_knee_" limit the values to 100
+    for col in df.columns:
+        if "fooof_a_knee_" in col:
+            df[col] = df[col].apply(lambda x: x if x < 100 else 100)
 
     # sort index
     df = df.sort_index()
@@ -39,7 +47,7 @@ def merge_df_with_pkg(sub_ = "rcs02l"):
         t_high = df_pkg.index[i] + pd.Timedelta("1 min")
 
         df_r = df.loc[t_low:t_high]
-        if df_r.shape[0] == 0:
+        if df_r.shape[0] <= 1:
             continue
         # calculate the mean, std, max and median of the data
         df_r_mean = df_r.mean()
@@ -200,7 +208,7 @@ if __name__ == "__main__":
     
     subs_ = [f for f in os.listdir(PATH_READ) if os.path.isdir(os.path.join(PATH_READ, f))]
     
-    MERGE_channels = False
+    MERGE_channels = True
     if MERGE_channels:
         for sub in subs_:
             print(sub)
@@ -230,3 +238,60 @@ if __name__ == "__main__":
         df_all_comb = pd.concat(df_all_comb, axis=0)
         df_all_comb.to_csv(os.path.join(PATH_OUT, "all_merged.csv"))
     
+    SEL_ONLY_ONLY_CH_PER_HEM = True
+    # This serves to replace all NaN values
+    if SEL_ONLY_ONLY_CH_PER_HEM is True:
+        df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged.csv"), index_col=0)
+        # delete all columns with sum up to zero
+        raw_cols = [f for f in df_all.columns if "raw" in f and "mean" in f]
+        msk_row_select = df_all[raw_cols].sum(axis=1).apply(lambda x: x!=0)
+        df_all = df_all[msk_row_select]
+
+        ch_cortex_ = ["ch_cortex_1_raw_mean", "ch_cortex_2_raw_mean"]
+        ch_subcortex_ = ["ch_subcortex_1_raw_mean", "ch_subcortex_2_raw_mean"]
+
+        # select only rows where at least one of ch_cortex is not NaN and at least one of ch_subcortex is not NaN
+        msk_row_select = df_all[ch_cortex_].sum(axis=1).apply(lambda x: x!=0) & df_all[ch_subcortex_].sum(axis=1).apply(lambda x: x!=0)
+        df_all_sel = df_all[msk_row_select]
+        # get the first cortex channel for each row that is not NaN
+        ch_cortex_1 = df_all_sel[ch_cortex_].apply(lambda x: x.dropna().index[0][:11], axis=1)
+        ch_subcortex_1 = df_all_sel[ch_subcortex_].apply(lambda x: x.dropna().index[0][:14], axis=1)
+        # iterate through df_all_sel and select only columns that start with the entry in ch_cortex_1
+        df_all_sel_ = []
+        for i in range(df_all_sel.shape[0]):
+            ch_cortex_1_ = ch_cortex_1.iloc[i]
+            ch_subcortex_1_ = ch_subcortex_1.iloc[i]
+            col_names_sel = [f for f in df_all_sel.columns if ch_cortex_1_ in f or ch_subcortex_1_ in f]
+            df_sel_single_chs = df_all_sel.iloc[i][col_names_sel]
+            # for ch_cortex_1_ replace each column name that starts with ch_cortex_1_ with "ch_cortex_"
+            df_sel_single_chs.index = [f.replace(ch_cortex_1_, "ch_cortex") for f in df_sel_single_chs.index]
+            df_sel_single_chs.index = [f.replace(ch_subcortex_1_, "ch_subcortex") for f in df_sel_single_chs.index]
+            df_all_sel_.append(df_sel_single_chs)
+
+        df_all_sel_ = pd.concat(df_all_sel_, axis=1).T
+        
+        # how many rows have NaN values
+        df_all_sel_["pkg_dt"] = df_all_sel["pkg_dt"]
+        df_all_sel_["pkg_bk"] = df_all_sel["pkg_bk"]
+        df_all_sel_["pkg_tremor"] = df_all_sel["pkg_tremor"]
+        df_all_sel_["pkg_dk"] = df_all_sel["pkg_dk"]
+        df_all_sel_["sub"] = df_all_sel["sub"]
+        df_all_sel_no_nan = df_all_sel_.dropna(axis=0)
+        # save
+        df_all_sel_no_nan.to_csv(os.path.join(PATH_OUT, "all_merged_preprocessed.csv"))
+
+        PLT_DATA = False
+        if PLT_DATA:
+            # standard scale the data
+            d_zs = df_all_sel_no_nan.iloc[:, :-6].copy()
+            d_zs = (d_zs - d_zs.mean()) / d_zs.std()
+
+            label_zs = df_all_sel_no_nan["pkg_dk"].copy()
+            label_zs = (label_zs - label_zs.mean()) / label_zs.std()
+
+            plt.imshow(d_zs.astype(float).T, aspect="auto")
+            plt.clim(-4, 4)
+            plt.plot(-label_zs.values)
+            plt.yticks(ticks=np.arange(df_all_sel_.shape[0]), labels=df_all_sel_.index)
+
+

@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 if __name__ == "__main__":
     
@@ -25,8 +26,29 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig(os.path.join("figures_ucsf", f"{sub_}_pkg_dk.pdf"))
 
+    # plot the same as above but for all subjects, add all figures to a pdf
+    pdf_pages = PdfPages(os.path.join("figures_ucsf", f"pkg_dk_overlap.pdf"))
+    df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged.csv"), index_col=0)
+    subs = df_all["sub"].unique()
 
+    for sub_ in subs:
+        df = pd.read_csv(os.path.join(PATH_OUT, f"{sub_}_merged.csv"), index_col=0)
+        df.index = pd.to_datetime(df.pkg_dt)
 
+        df_pkg = pd.read_csv(os.path.join(PATH_PKG, f"{sub_}_pkg.csv"))
+        df_pkg.index = pd.to_datetime(df_pkg.pkg_dt)
+
+        plt.figure(figsize=(10, 3), dpi=100)
+        plt.plot(df_pkg.pkg_dk, linestyle='None', marker="o", markersize=0.5, label="PKG recorded data")
+        plt.plot(df.pkg_dk, linestyle='None', marker="o", markersize=0.5, label="PKG-RC+S matched data")
+        plt.ylabel("PKG Dyskinesia score")
+        plt.xlabel("Time")
+        plt.title(f"PKG Dyskinesia score recorded vs matched data\nsub: {sub_}")
+        plt.legend()
+        plt.tight_layout()
+        pdf_pages.savefig()
+        plt.close()
+    pdf_pages.close()
 
 
 

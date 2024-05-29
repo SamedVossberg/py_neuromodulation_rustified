@@ -9,9 +9,10 @@ from scipy import stats
 from catboost import CatBoostRegressor, Pool
 from matplotlib.backends.backend_pdf import PdfPages
 import joblib
+import time
 
 PATH_IN = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std"
-PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized"
+PATH_OUT_BASE = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized"
 
 if __name__ == "__main__":
 
@@ -21,6 +22,7 @@ if __name__ == "__main__":
     df_all = df_all.sort_values(by="pkg_dt")
 
     def process_sub(sub):
+        PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window))
         df_sub = df_all.query("sub == @sub")
         
         # iterate through all rows, take the mean of the previous 20 min
@@ -32,7 +34,7 @@ if __name__ == "__main__":
             if idx < 1:
                 continue
             else:
-                time_before = df_sub.loc[idx, "pkg_dt"] - pd.Timedelta(minutes=10)
+                time_before = df_sub.loc[idx, "pkg_dt"] - pd.Timedelta(minutes=normalization_window)
                 time_now = df_sub.loc[idx, "pkg_dt"]
                 df_range = df_sub.query("pkg_dt >= @time_before and pkg_dt <@time_now")
                 if df_range.shape[0] < 2:
@@ -60,11 +62,11 @@ if __name__ == "__main__":
         
         df_normed = pd.DataFrame(df_normed)
         df_normed["pkg_dk_normed"] = df_normed["pkg_dk"] / df_normed["pkg_dk"].max()
-        df_normed["pkg_dk_class"] = df_normed["pkg_dk_normed"] > 0.1
+        df_normed["pkg_dk_class"] = df_normed["pkg_dk_normed"] > 0.02
         df_normed["pkg_bk_normed"] = df_normed["pkg_bk"] / df_normed["pkg_bk"].max()
-        df_normed["pkg_bk_class"] = df_normed["pkg_bk_normed"] > 0.1
+        df_normed["pkg_bk_class"] = df_normed["pkg_bk_normed"] > 0.02
         df_normed["pkg_tremor_normed"] = df_normed["pkg_tremor"] / df_normed["pkg_tremor"].max()
-        df_normed["pkg_tremor_class"] = df_normed["pkg_tremor_normed"] > 0.1
+        df_normed["pkg_tremor_class"] = df_normed["pkg_tremor_normed"] > 0.02
 
         df_normed.to_csv(os.path.join(PATH_OUT, f"merged_normed_{sub}.csv"))
 
@@ -72,12 +74,19 @@ if __name__ == "__main__":
     
     #process_sub(subs[0])
     # parallelize
-    joblib.Parallel(n_jobs=-1)(joblib.delayed(process_sub)(sub) for sub in subs)
-
-    files = [os.path.join(PATH_OUT, f) for f in os.listdir(PATH_OUT) if "merged_normed_" in f]
-    
-    l_ = []
-    for f in files:
-        df = pd.read_csv(f)
-        l_.append(df)
-    pd.concat(l_).to_csv(os.path.join(PATH_OUT, "all_merged_normed.csv"))
+    for normalization_window in [5, 10, 20, 30, 60, 120][::-1]:
+        PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window))
+        if not os.path.exists(PATH_OUT):
+            os.makedirs(PATH_OUT)
+        time_start_comp = time.time()
+        #process_sub(subs[0])
+        joblib.Parallel(n_jobs=-1)(joblib.delayed(process_sub)(sub) for sub in subs)
+        time_end_comp = time.time()
+        print(f"Time for normalization {normalization_window}: {time_end_comp - time_start_comp}")
+        files = [os.path.join(PATH_OUT, f) for f in os.listdir(PATH_OUT) if "merged_normed_" in f]
+        
+        l_ = []
+        for f in files:
+            df = pd.read_csv(f)
+            l_.append(df)
+        pd.concat(l_).to_csv(os.path.join(PATH_OUT, "all_merged_normed.csv"))

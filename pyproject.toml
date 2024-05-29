@@ -61,6 +61,8 @@ dependencies = [
     "tensorflow-metal>=1.0.0",
     "cebra>=0.4.0",
     "xgboost>=2.0.3",
+    "polars>=0.20.30",
+    "polars-lts-cpu>=0.20.30",
 ]
 
 [project.optional-dependencies]

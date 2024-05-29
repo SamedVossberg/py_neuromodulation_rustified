@@ -48,7 +48,8 @@ CLASSIFICATION = True
 if __name__ == "__main__":
 
     df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged_normed.csv"), index_col=0)
-    df_all = df_all.drop(columns=["Unnamed: 0"])
+    if "Unnamed: 0" in df_all.columns:
+        df_all = df_all.drop(columns=["Unnamed: 0"])
     subs = df_all["sub"].unique()
 
     pdf_pages = PdfPages(os.path.join("figures_ucsf", "dys_labels.pdf")) 
@@ -56,11 +57,26 @@ if __name__ == "__main__":
     l_ = []
     for sub in np.sort(subs):
         df_sub = df_all.query("sub == @sub")
-        plt.figure()
+        plt.figure(figsize=(13, 4))
+        plt.subplot(142)
+        plt.plot(df_sub["pkg_dk"].values / df_sub["pkg_dk"].values.max())
+        plt.title("Normalized PKG Dk")
+        plt.subplot(141)
+        plt.plot(df_sub["pkg_dk"].values)
+        plt.title("Raw PKG Dk")
+        plt.subplot(143)
+        plt.hist(df_sub["pkg_dk"].values / df_sub["pkg_dk"].values.max(), bins=50)
+        plt.title("Histogram PKG Dk")
 
-        plt.plot(df_sub["pkg_dk"].values / df_sub["pkg_dk"].values.max(), label="pkg_dk")
-        plt.legend()
-        plt.title(sub)
+        plt.subplot(144)
+        plt.hist(df_sub["pkg_dk"].values / df_sub["pkg_dk"].values.max(), bins=50)
+        plt.xlim(0, 0.15)
+        # put xticks at intervals of 0.02
+        plt.xticks(np.arange(0, 0.15, 0.02))
+        plt.title("Histogram PKG Dk \nClipped 0.02")
+        plt.suptitle(f"{sub} set threshold: {thresholds_[sub]}")
+        plt.tight_layout()
+
         pdf_pages.savefig(plt.gcf())
         plt.close()
         df_sub["pkg_dk_class"] = df_sub["pkg_dk_normed"] > thresholds_[sub]

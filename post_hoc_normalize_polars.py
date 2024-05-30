@@ -1,5 +1,6 @@
 import os
 import polars as pl
+import numpy as np
 from joblib import Parallel, delayed
 import time
 from matplotlib import pyplot as plt
@@ -63,14 +64,14 @@ def process_sub(sub, normalization_window, df_all):
                 pl.Series(f"{val_}_class", df_normed[f"{val_}_normed"] > 0.02)
             )
 
-        import pandas as pd
-        df_pd = pd.read_csv(os.path.join(PATH_OUT, f"merged_normed_{sub}.csv"))
-        df_pd = df_pd.drop(columns=["Unnamed: 0"])
-        df_pd["pkg_dt"] = pd.to_datetime(df_pd["pkg_dt"])
+        #import pandas as pd
+        #df_pd = pd.read_csv(os.path.join(PATH_OUT, f"merged_normed_{sub}.csv"))
+        #df_pd = df_pd.drop(columns=["Unnamed: 0"])
+        #df_pd["pkg_dt"] = pd.to_datetime(df_pd["pkg_dt"])
 
         # compare df_pd and df_normed
-        df_pd.columns[0
-                      ] == df_normed.to_pandas()
+        #df_pd.columns[0
+        #              ] == df_normed.to_pandas()
 
         df_normed.write_csv(os.path.join(PATH_OUT, f"merged_normed_{sub}.csv"))
 
@@ -83,12 +84,14 @@ if __name__ == "__main__":
 
     subs = df_all["sub"].unique().to_list()
 
-    for normalization_window in [5, 10, 20, 30, 60, 120][::-1]:
+    # [5, 10, 20, 30, 60, 120]
+    times_min = np.array([3, 5, 8, 12, 16, 20, 24])*60
+    for normalization_window in times_min:
         PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window))
         if not os.path.exists(PATH_OUT):
             os.makedirs(PATH_OUT)
         time_start_comp = time.time()
-        process_sub(subs[0], normalization_window, df_all)
+        #process_sub(subs[0], normalization_window, df_all)
         Parallel(n_jobs=-1)(delayed(process_sub)(sub, normalization_window, df_all) for sub in subs)
         time_end_comp = time.time()
         print(f"Time for normalization {normalization_window}: {time_end_comp - time_start_comp}")

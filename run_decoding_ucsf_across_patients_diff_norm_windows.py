@@ -17,7 +17,7 @@ PLT_PDF = False
 
 if __name__ == "__main__":
 
-    for norm_window in [5, 10, 20, 30, 60, 120]:
+    for norm_window in [180, 300, 480, 720, 960, 1200, 1440]:
         df_all = pd.read_csv(os.path.join(PATH_OUT, str(norm_window), "all_merged_normed.csv"), index_col=0)
         #df_all = df_all.drop(columns=["Unnamed: 0"])
         subs = df_all["sub"].unique()

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     
     for feature_mod in ["fft", "welch", "bursts", "Hjorth", "Sharpwave", "fooof", "LineLength", "_raw_"]:
 
-        df_all = pd.read_csv(os.path.join(PATH_OUT, str(10), "all_merged_normed.csv"), index_col=0)
+        df_all = pd.read_csv(os.path.join(PATH_OUT, str(480), "all_merged_normed.csv"), index_col=0)
         #df_all = df_all.drop(columns=["Unnamed: 0"])
         
         df_all = df_all[[c for c in df_all.columns if "pkg_" in c or c == "sub" or feature_mod in c]]
@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
         # save d_out to a pickle file
         if CLASSIFICATION:
-            SAVE_NAME = f"d_out_patient_across_class_feature_mod_{str(feature_mod)}.pkl"
+            SAVE_NAME = f"d_out_patient_across_class_feature_mod_{str(feature_mod)}_480_min.pkl"
         else:
             SAVE_NAME = "d_out_patient_across_reg.pkl"
         with open(os.path.join("out_per", SAVE_NAME), "wb") as f:

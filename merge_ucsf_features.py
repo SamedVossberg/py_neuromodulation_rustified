@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use("qtagg")
 from matplotlib import pyplot as plt
 from sklearn import linear_model, metrics, model_selection, ensemble
 from scipy import stats
@@ -9,8 +11,8 @@ import warnings
 warnings.filterwarnings('error')
 
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged"
-PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std"
-PATH_READ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out"
+PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length"
+PATH_READ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out_10s_window_length" #py-neuro_out"
 PATH_PKG = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/pkg data"
 
 
@@ -65,6 +67,8 @@ def merge_df_with_pkg(sub_ = "rcs02l"):
         l_merge.append(df_comb)
 
     df_all = pd.concat(l_merge, axis=1).T
+    if os.path.exists(PATH_OUT) is False:
+        os.makedirs(PATH_OUT)
     df_all.to_csv(os.path.join(PATH_OUT, f"{sub_}_merged.csv"))
     return df_all
 

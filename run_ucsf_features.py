@@ -19,10 +19,11 @@ def stream_init(ch_names):
         data, car_rereferencing=True
     )
 
+    sampling_rate_features_hz = 0.1
     stream = nm.Stream(
         sfreq=250,
         data=None,
-        sampling_rate_features_hz=0.1,
+        sampling_rate_features_hz=sampling_rate_features_hz,
         line_noise=60,
         nm_channels=nm_channels,
     )
@@ -32,7 +33,7 @@ def stream_init(ch_names):
     stream.nm_channels["new_name"] = ch_names
 
     # data is already resampled to 250 Hz
-
+    stream.settings["segment_length_features_ms"] = int(1000/sampling_rate_features_hz)
     stream.settings["postprocessing"]["feature_normalization"] = False
     stream.settings["preprocessing"] = ["notch_filter"]
 
@@ -45,6 +46,14 @@ def stream_init(ch_names):
         "high gamma": [90, 105],
     }
     stream.settings["features"]["fooof"] = True
+    stream.settings["features"]["coherence"] = False
+    stream.settings["welch_settings"]["windowlength_ms"] = 10000
+    stream.settings["welch_settings"]["return_spectrum"] = True
+
+    stream.settings["fft_settings"]["windowlength_ms"] = 10000
+    stream.settings["fooof"]["windowlength_ms"] = 10000
+
+
     # ["0-2", "0-1", "1-3", "2-3", "0-3", "8-9", "8-10", "10-11", "9-11", "8-11", "9-10"]
 
     coh_pairs = []
@@ -100,13 +109,14 @@ if ICN2 is True:
     PATH_OUT_ = r"\\10.39.42.199\Public\UCSF\features"
 else:
     PATH_DATA_TS = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/raw data"
-    PATH_OUT_ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out"
+    PATH_OUT_ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out_10s_window_length"
 
 if __name__ == "__main__":
 
-    sub_list = [f[:6] for f in os.listdir(PATH_DATA_TS) if f.endswith("_ts.csv") and os.path.exists(os.path.join(PATH_OUT_, f[:6])) is False]
+    sub_list = [f[:6] for f in os.listdir(PATH_DATA_TS) if f.endswith("_ts.csv")]  # and os.path.exists(os.path.join(PATH_OUT_, f[:6])) is False
 
-    process_sub(sub_list[0])
+    for sub in sub_list:
+        process_sub(sub)
 
-    #n_jobs = joblib.cpu_count()
+    #n_jobs = 5#joblib.cpu_count()-2
     #joblib.Parallel(n_jobs=len(sub_list))(joblib.delayed(process_sub)(sub_) for sub_ in sub_list)

@@ -28,9 +28,11 @@ class UCSFReader:
             self.path,
             chunksize=chunk_size,
             index_col=0,
+            #engine="pyarrow"
         ) as reader:
             # yield None
             for df in reader:
+                #df = df.astype(object)
                 self.idx += 1
                 # df.set_index("timestamp", inplace=True)
                 df.index = pd.to_datetime(df.index)
@@ -54,7 +56,7 @@ class UCSFReader:
 
                     # check if there is a single columns that is not NaN
                     if df_r_f.notnull().any().any():
-                        print(t_high)
+                        #print(t_high)
                         yield df_r_f.index[-1], np.array(df_r_f).T
                     else:
                         continue

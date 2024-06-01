@@ -34,6 +34,8 @@ class UCSFReader:
         #     # yield None
 
         PATH_PARQUET = r"\\10.39.42.199\Public\UCSF\raw_parquet"
+        PATH_PARQUET = "/Users/Timon/Documents/UCSF_Analysis/out/parquet"
+
         sub = self.path[
             self.path.find("_3daysprint") - 6 : self.path.find("_3daysprint")
         ]
@@ -47,7 +49,7 @@ class UCSFReader:
         sort_idx = np.argsort(sub_files[:, 1].astype(int))
         files_sorted = sub_files[sort_idx, 0]
 
-        for f in files_sorted[-20:]:
+        for f in files_sorted:#[-20:]:
             df = pd.read_parquet(os.path.join(PATH_PARQUET, f))
             # df = df.astype(object)
             self.idx += 1

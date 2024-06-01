@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib
-matplotlib.use("qtagg")
+#matplotlib.use("qtagg")
 from matplotlib import pyplot as plt
 from sklearn import linear_model, metrics, model_selection, ensemble
 from scipy import stats

@@ -20,8 +20,18 @@ def write_parquet(sub_):
 
 if __name__ == "__main__":
 
-    PATH_IN = r"\\10.39.42.199\Public\UCSF\time series"
-    PATH_OUT = r"\\10.39.42.199\Public\UCSF\raw_parquet"
+    OS_ = "Mac"
+
+    if OS_ == "Mac":
+        PATH_IN = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/raw data"
+        PATH_OUT = (
+            "/Users/Timon/Documents/UCSF_Analysis/out/parquet"
+        )
+    else:
+        PATH_IN = r"\\10.39.42.199\Public\UCSF\time series"
+        PATH_OUT = r"\\10.39.42.199\Public\UCSF\raw_parquet"
+
+
     sub_list = [
         f[:6] for f in os.listdir(PATH_IN) if f.endswith("_ts.csv")
     ]  # and os.path.exists(os.path.join(PATH_OUT_, f[:6])) is False

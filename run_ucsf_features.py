@@ -111,7 +111,7 @@ def process_sub(sub_):
     stream.run(filename, out_path_root=PATH_OUT, folder_name=sub_)
 
 
-ICN2 = True
+ICN2 = False
 
 if ICN2 is True:
     PATH_DATA_TS = r"\\10.39.42.199\Public\UCSF\time series"

@@ -5,8 +5,8 @@ from joblib import Parallel, delayed
 import time
 from matplotlib import pyplot as plt
 
-PATH_IN = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std"
-PATH_OUT_BASE = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized"
+PATH_IN = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length"
+PATH_OUT_BASE = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length"
 
 def process_sub(sub, normalization_window, df_all):
     PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window))

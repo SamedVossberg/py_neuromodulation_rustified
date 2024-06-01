@@ -10,13 +10,17 @@ from scipy import stats
 from catboost import CatBoostRegressor, Pool, CatBoostClassifier
 from matplotlib.backends.backend_pdf import PdfPages
 
-PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized"
+PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length/480"
 
 CLASSIFICATION = True
 
 if __name__ == "__main__":
 
     df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged_normed.csv"), index_col=0)
+    # drop all columns that contain "psd"
+    
+    #df_all = df_all[[c for c in df_all.columns if "psd" not in c]]
+    
     #df_all = df_all.drop(columns=["Unnamed: 0"])
     subs = df_all["sub"].unique()
 
@@ -38,7 +42,7 @@ if __name__ == "__main__":
     
     for loc_ in ["ecog_stn", "ecog", "stn",]:
         d_out[label_name][loc_] = {}
-        pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}.pdf")) 
+        pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_LM.pdf")) 
         if loc_ == "ecog_stn":
             df_use = df_all.copy()
         elif loc_ == "ecog":
@@ -66,16 +70,36 @@ if __name__ == "__main__":
                 classes = np.unique(y_train)
                 weights = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
                 class_weights = dict(zip(classes, weights))
-                model = CatBoostClassifier(silent=True, class_weights=class_weights)
-                #model = linear_model.LogisticRegression()
+                model = CatBoostClassifier(silent=False, class_weights=class_weights)
+                model = linear_model.LogisticRegression(class_weight="balanced")
             else:
                 model = CatBoostRegressor(silent=True) # task_type="GPU"
+
+            # drop columns that have NaN values
+            X_train = X_train.dropna(axis=1)
+            X_test = X_test[X_train.columns]
+
+            # drop columns that have inf values
+            X_train = X_train.replace([np.inf, -np.inf], np.nan)
+            X_train = X_train.dropna(axis=1)
+            X_test = X_test[X_train.columns]
+
+            # drop X_test columns that have inf values
+            X_test = X_test.replace([np.inf, -np.inf], np.nan)
+            X_test = X_test.dropna(axis=1)
+            X_train = X_train[X_test.columns]
+
+            # which columns contain inf
+            # replace NaN values with 0
+            X_test = X_test.fillna(0)
 
             model.fit(X_train, y_train)
 
             pr = model.predict(X_test)
-
-            feature_importances = model.get_feature_importance(Pool(X_test, y_test), type="PredictionValuesChange")
+            if type(model) == linear_model.LogisticRegression:
+                feature_importances = model.coef_
+            else:
+                feature_importances = model.get_feature_importance(Pool(X_test, y_test), type="PredictionValuesChange")
 
             d_out[label_name][loc_][sub_test] = {}
             if CLASSIFICATION:
@@ -118,7 +142,7 @@ if __name__ == "__main__":
 
     # save d_out to a pickle file
     if CLASSIFICATION:
-        SAVE_NAME = "d_out_patient_across_class.pkl"
+        SAVE_NAME = "d_out_patient_across_class_10s_seglength_480_all_LM.pkl"
     else:
         SAVE_NAME = "d_out_patient_across_reg.pkl"
     with open(os.path.join("out_per", SAVE_NAME), "wb") as f:

@@ -31,12 +31,12 @@ if __name__ == "__main__":
 
     
     df = read_pkg_out(os.path.join("out_per", "d_out_patient_across_class_10s_seglength_480_all.pkl"))
-    df["features"] = "all_10s"
+    df["features"] = "10s norm"
     df_ = read_pkg_out(os.path.join("out_per", "d_out_patient_across_class_10s_seglength_480_wo_psd.pkl"))
-    df_["features"] = "wo_psd_10s"
+    df_["features"] = "wo psd 10s norm"
     df = pd.concat([df, df_])
     df_ = read_pkg_out(os.path.join("out_per", "d_out_patient_across_class_480.pkl"))
-    df_["features"] = "wo_psd_1s"
+    df_["features"] = "1s norm"
     df = pd.concat([df, df_])
 
 
@@ -49,6 +49,8 @@ if __name__ == "__main__":
 
     plt.xlabel("Location")
     plt.ylabel("Balanced accuracy")
+    plt.title("Comparison of different feature segment lengths\n and with/without PSD features")
+    plt.savefig("figures_ucsf/feature_segment_length_comparison.pdf")
     plt.show(block=True)
 
     df.groupby(["features", "loc"])["ba"].mean()

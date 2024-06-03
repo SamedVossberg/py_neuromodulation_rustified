@@ -4,15 +4,23 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn import linear_model, metrics, model_selection, ensemble
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
 from sklearn.utils.class_weight import compute_class_weight
+import cebra
+from cebra import CEBRA
 from tqdm import tqdm
 from scipy import stats
 from catboost import CatBoostRegressor, Pool, CatBoostClassifier
+from xgboost import XGBClassifier
 from matplotlib.backends.backend_pdf import PdfPages
 
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length/480"
 
 CLASSIFICATION = True
+
+MODEL_NAME = "RF" # "CB", "LM", "XGB", "PCA_LM", "CEBRA", "RF"
 
 if __name__ == "__main__":
 
@@ -42,7 +50,7 @@ if __name__ == "__main__":
     
     for loc_ in ["ecog_stn", "ecog", "stn",]:
         d_out[label_name][loc_] = {}
-        pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_LM.pdf")) 
+        pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_{MODEL_NAME}.pdf")) 
         if loc_ == "ecog_stn":
             df_use = df_all.copy()
         elif loc_ == "ecog":
@@ -50,7 +58,7 @@ if __name__ == "__main__":
         elif loc_ == "stn":
             df_use = df_all[[c for c in df_all.columns if c.startswith("ch_subcortex") or c.startswith("pkg") or c.startswith("sub")]].copy()
 
-        for sub_test in tqdm(subs):
+        for sub_test in subs:  # tqdm(
             df_test = df_use[df_use["sub"] == sub_test]
 
             df_test = df_test.drop(columns=["sub"])
@@ -70,8 +78,14 @@ if __name__ == "__main__":
                 classes = np.unique(y_train)
                 weights = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
                 class_weights = dict(zip(classes, weights))
-                model = CatBoostClassifier(silent=False, class_weights=class_weights)
-                model = linear_model.LogisticRegression(class_weight="balanced")
+                if MODEL_NAME == "CB":
+                    model = CatBoostClassifier(silent=False, class_weights=class_weights)
+                elif MODEL_NAME == "LM":
+                    model = linear_model.LogisticRegression(class_weight="balanced")
+                elif MODEL_NAME == "XGB":
+                    model = XGBClassifier(class_weight="balanced")
+                elif MODEL_NAME == "RF":
+                    model = ensemble.RandomForestClassifier(class_weight="balanced", n_jobs=-1)
             else:
                 model = CatBoostRegressor(silent=True) # task_type="GPU"
 
@@ -93,13 +107,52 @@ if __name__ == "__main__":
             # replace NaN values with 0
             X_test = X_test.fillna(0)
 
+            if MODEL_NAME == "PCA_LM":
+                pca = PCA(n_components=10)
+                # standardize the data
+                scaler = StandardScaler()
+                X_train = scaler.fit_transform(X_train)
+                X_test = scaler.transform(X_test)
+
+                X_train = pca.fit_transform(X_train)
+                X_test = pca.transform(X_test)
+                model = linear_model.LogisticRegression(class_weight="balanced")
+            elif MODEL_NAME == "CEBRA":
+
+                cebra_model = CEBRA(
+                    model_architecture = "offset1-model",#'offset40-model-4x-subsample', # previously used: offset1-model-v2'    # offset10-model  # my-model
+                    batch_size = 100,
+                    temperature_mode="auto",
+                    learning_rate = 0.005,
+                    max_iterations = 1000,
+                    #time_offsets = 10,
+                    output_dimension = 3,  # check 10 for better performance
+                    device = "mps",
+                   #conditional="time_delta",  # assigning CEBRA to sample temporally and behaviorally for reference
+                    hybrid=False,
+                    verbose = True
+                )
+
+                cebra_model.fit(X_train, y_train)
+                X_train_emb = cebra_model.transform(X_train)
+                X_test_emb = cebra_model.transform(X_test)
+                cebra.plot_loss(cebra_model)
+                cebra.plot_temperature(cebra_model)
+                cebra.plot_embedding(X_train_emb, cmap="viridis", markersize=10, alpha=0.5, embedding_labels=y_train.T) # embedding_labels=y_train
+
+                model = linear_model.LogisticRegression(class_weight="balanced")
+
             model.fit(X_train, y_train)
 
             pr = model.predict(X_test)
             if type(model) == linear_model.LogisticRegression:
                 feature_importances = model.coef_
-            else:
+            elif type(model) == XGBClassifier:
+                feature_importances = model.feature_importances_
+            elif MODEL_NAME == "CB":
                 feature_importances = model.get_feature_importance(Pool(X_test, y_test), type="PredictionValuesChange")
+            elif MODEL_NAME == "RF":
+                feature_importances = model.feature_importances_
 
             d_out[label_name][loc_][sub_test] = {}
             if CLASSIFICATION:
@@ -142,7 +195,7 @@ if __name__ == "__main__":
 
     # save d_out to a pickle file
     if CLASSIFICATION:
-        SAVE_NAME = "d_out_patient_across_class_10s_seglength_480_all_LM.pkl"
+        SAVE_NAME = f"d_out_patient_across_class_10s_seglength_480_all_{MODEL_NAME}.pkl"
     else:
         SAVE_NAME = "d_out_patient_across_reg.pkl"
     with open(os.path.join("out_per", SAVE_NAME), "wb") as f:

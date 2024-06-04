@@ -5,8 +5,9 @@ from matplotlib import pyplot as plt
 from scipy import stats
 import seaborn as sns
 import pickle
+from py_neuromodulation import nm_stats
 
-OUT_FILE = "d_out_patient_across_class.pkl"
+OUT_FILE = "d_out_patient_across_class_10s_seglength_480_all.pkl"
 PATH_READ = os.path.join("out_per", OUT_FILE)
 
 with open(PATH_READ, "rb") as f:
@@ -52,9 +53,7 @@ for sub in updrs_.keys():
     l_.append(
         {
             "sub": sub,
-            "mean": df[mask]["ba"].mean(),
-            "median": df[mask]["ba"].median(),
-            "max" : df[mask]["ba"].max(),
+            "ba": df[mask].query("loc == 'ecog_stn'")["ba"].iloc[0],
             "updrs" : updrs_[sub]
         }
     )
@@ -63,13 +62,19 @@ df_updrs = pd.DataFrame(l_)
 
 # show in a regplot the correlation of the decoding accuracy with the updrs score
 plt.figure()
-plt.subplot(1, 2, 1)
-sns.regplot(x="updrs", y="mean", data=df_updrs)
-plt.title("Correlation mean")
-plt.ylabel("Mean balanced accuracy")
-plt.subplot(1, 2, 2)
-sns.regplot(x="updrs", y="max", data=df_updrs)
-plt.title("Correlation max")
-plt.ylabel("Max balanced accuracy")
+
+sns.regplot(x="updrs", y="ba", data=df_updrs)
+rho = np.corrcoef(df_updrs["updrs"], df_updrs["ba"])
+_, p_val = nm_stats.permutationTestSpearmansRho(
+    df_updrs["updrs"].values, df_updrs["ba"].values,
+    False,
+    " ",
+    5000
+)
+
+plt.title(f"Correlation rho={np.round(rho[0, 1], 2)} p={np.round(p_val, 2)}")
+plt.ylabel("Dyskinesia Prediction balanced accuracy")
+plt.xlabel("UPDRS-IV.1 score")
 plt.tight_layout()
+plt.show(block=True)
 plt.savefig("figures_ucsf/correlation_updrs_per.pdf")

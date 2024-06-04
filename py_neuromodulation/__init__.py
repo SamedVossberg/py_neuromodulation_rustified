@@ -3,7 +3,7 @@ import platform
 from pathlib import PurePath
 from importlib.metadata import version
 from .nm_logger import NMLogger
-import matplotlib
+#import matplotlib
 
 # matplotlib.use("tkagg")  # Set matplotlib backend to TkAgg (Qt backend crashes)
 

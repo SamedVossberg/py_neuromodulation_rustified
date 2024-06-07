@@ -28,6 +28,14 @@ for pkg_decode_label in d_out.keys():
 
 df = pd.DataFrame(data)
 
+plt.figure()
+sns.boxplot(x="loc", y="ba", data=df, showmeans=True)
+plt.xlabel("Location")
+sns.swarmplot(x="loc", y="ba", data=df, color=".25")
+plt.ylabel("Balanced accuracy")
+plt.title("Balanced accuracy per location")
+plt.tight_layout()
+
 updrs_ = {
     "rcs02": 4,
     "rcs05": 1,

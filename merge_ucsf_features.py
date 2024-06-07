@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import numpy as np
-import matplotlib
-#matplotlib.use("qtagg")
+#import matplotlib
+#matplotlib.use('macosx',force=True)
 from matplotlib import pyplot as plt
 from sklearn import linear_model, metrics, model_selection, ensemble
 from scipy import stats
@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings('error')
 
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged"
-PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length"
+PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length_all_ch"
 PATH_READ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out_10s_window_length" #py-neuro_out"
 PATH_PKG = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/pkg data"
 
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     
     subs_ = [f for f in os.listdir(PATH_READ) if os.path.isdir(os.path.join(PATH_READ, f))]
     
-    MERGE_channels = True
+    MERGE_channels = False
     if MERGE_channels:
         for sub in subs_:
             print(sub)
@@ -225,15 +225,40 @@ if __name__ == "__main__":
             print(sub)
             df_all = pd.read_csv(os.path.join(PATH_OUT, f"{sub}_merged.csv"), index_col=0)
             ch_cortex_sel, ch_subcortex_sel = get_most_recorded_chs(df_all)
-            # select only columns that contain in thir names the two most recorded channels or pkg_dk
             list_str_include = ch_cortex_sel + ch_subcortex_sel + ["pkg_dk"] + ["pkg_bk"] + ["pkg_tremor"] + ["pkg_dt"]
-
             df_all_= df_all[[f for f in df_all.columns if any([ch in f for ch in list_str_include])]]
-            df_all_.columns = [f.replace(ch_cortex_sel[0], "ch_cortex_1") for f in df_all_.columns]
-            df_all_.columns = [f.replace(ch_cortex_sel[1], "ch_cortex_2") for f in df_all_.columns]
+            # replace in ch_cortex_sel "8-10" with cortex_mc_8_10, "8-9" with cortex_mc_8-9, "10-11" with cortex_sc_10_11, "9-11" with cortex_sc_9_11
+            ch_cortex_rep = []
+            for ch in ch_cortex_sel:
+                if ch == "8-10":
+                    ch_cortex_rep.append("cortex_mc_8_10")
+                elif ch == "8-9":
+                    ch_cortex_rep.append("cortex_mc_8_9")
+                elif ch == "10-11":
+                    ch_cortex_rep.append("cortex_sc_10_11")
+                elif ch == "9-11":
+                    ch_cortex_rep.append("cortex_sc_9_11")
+
+            # replace in ch_subcortex_sel "0-1" with subcortex_c_0_1, "0-2" with subcortex_c_0_2, "2-3" with subcortex_d_2_3, "1-3" with subcortex_d_1_3
+            ch_subcortex_rep = []
+            for ch in ch_subcortex_sel:
+                if ch == "0-1":
+                    ch_subcortex_rep.append("subcortex_c_0_1")
+                elif ch == "0-2":
+                    ch_subcortex_rep.append("subcortex_c_0_2")
+                elif ch == "2-3":
+                    ch_subcortex_rep.append("subcortex_d_2_3")
+                elif ch == "1-3":
+                    ch_subcortex_rep.append("subcortex_d_1_3")
+            # select only columns that contain in thir names the two most recorded channels or pkg_dk
+            
+
+            
+            df_all_.columns = [f.replace(ch_cortex_sel[0], ch_cortex_rep[0]) for f in df_all_.columns]
+            df_all_.columns = [f.replace(ch_cortex_sel[1], ch_cortex_rep[1]) for f in df_all_.columns]
             # replace the first ch_subcortex_sel with ch_subcortex_1 and the second with ch_subcortex_2 in df_all
-            df_all_.columns = [f.replace(ch_subcortex_sel[0], "ch_subcortex_1") for f in df_all_.columns]
-            df_all_.columns = [f.replace(ch_subcortex_sel[1], "ch_subcortex_2") for f in df_all_.columns]
+            df_all_.columns = [f.replace(ch_subcortex_sel[0], ch_subcortex_rep[0]) for f in df_all_.columns]
+            df_all_.columns = [f.replace(ch_subcortex_sel[1], ch_subcortex_rep[1]) for f in df_all_.columns]
             # remove columns that contain "coh"
             df_all_ = df_all_.drop(columns=df_all_.columns[df_all_.columns.str.contains("coh")])
             df_all_["sub"] = sub

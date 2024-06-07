@@ -1,3 +1,4 @@
+0. change_data_to_parquet.py
 1. run_ucsf_features.py
 2. merge_ucsf_features.py
 3. post_hoc_normalize_polars.py

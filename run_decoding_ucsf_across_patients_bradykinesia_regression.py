@@ -50,6 +50,8 @@ if __name__ == "__main__":
     df_all = df_all[mask]
     
     for loc_ in ["ecog_stn", "ecog", "stn",]:
+        if loc_ != "ecog_stn":
+            continue
         d_out[label_name][loc_] = {}
         pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_{MODEL_NAME}_bk_regression.pdf")) 
         if loc_ == "ecog_stn":
@@ -59,7 +61,7 @@ if __name__ == "__main__":
         elif loc_ == "stn":
             df_use = df_all[[c for c in df_all.columns if c.startswith("ch_subcortex") or c.startswith("pkg") or c.startswith("sub")]].copy()
 
-        for sub_test in np.sort(subs):  # tqdm(
+        for sub_test in tqdm(np.sort(subs)):  # tqdm(
             df_test = df_use[df_use["sub"] == sub_test]
 
             df_test = df_test.drop(columns=["sub"])
@@ -88,7 +90,7 @@ if __name__ == "__main__":
                 elif MODEL_NAME == "RF":
                     model = ensemble.RandomForestClassifier(class_weight="balanced", n_jobs=-1)
             else:
-                model = CatBoostRegressor(silent=False) # task_type="GPU"
+                model = CatBoostRegressor(silent=True) # task_type="GPU"
 
             # drop columns that have NaN values
             X_train = X_train.dropna(axis=1)
@@ -198,9 +200,7 @@ if __name__ == "__main__":
         pdf_pages.close()
 
     # save d_out to a pickle file
-    if CLASSIFICATION:
-        SAVE_NAME = f"d_out_patient_across_class_10s_seglength_480_all_{MODEL_NAME}_reg_bk.pkl"
-    else:
-        SAVE_NAME = "d_out_patient_across_reg.pkl"
+    SAVE_NAME = f"d_out_patient_across_class_10s_seglength_480_all_{MODEL_NAME}_reg_bk.pkl"
+
     with open(os.path.join("out_per", SAVE_NAME), "wb") as f:
         pickle.dump(d_out, f)

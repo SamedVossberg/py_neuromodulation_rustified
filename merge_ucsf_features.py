@@ -221,6 +221,7 @@ if __name__ == "__main__":
     MERGE_ALL = True
     if MERGE_ALL:
         df_all_comb = []
+        l_ch_names = []
         for sub in subs_:
             print(sub)
             df_all = pd.read_csv(os.path.join(PATH_OUT, f"{sub}_merged.csv"), index_col=0)
@@ -252,13 +253,19 @@ if __name__ == "__main__":
                     ch_subcortex_rep.append("subcortex_d_1_3")
             # select only columns that contain in thir names the two most recorded channels or pkg_dk
             
-
+            l_ch_names.append({
+                "ch_cortex_1" : ch_cortex_rep[0],
+                "ch_cortex_2" : ch_cortex_rep[1],
+                "ch_subcortex_1" : ch_subcortex_rep[0],
+                "ch_subcortex_2" : ch_subcortex_rep[1],
+                "sub" : sub
+            })
             
-            df_all_.columns = [f.replace(ch_cortex_sel[0], ch_cortex_rep[0]) for f in df_all_.columns]
-            df_all_.columns = [f.replace(ch_cortex_sel[1], ch_cortex_rep[1]) for f in df_all_.columns]
+            df_all_.columns = [f.replace(ch_cortex_sel[0], "ch_cortex_1") for f in df_all_.columns]
+            df_all_.columns = [f.replace(ch_cortex_sel[1], "ch_cortex_2") for f in df_all_.columns]
             # replace the first ch_subcortex_sel with ch_subcortex_1 and the second with ch_subcortex_2 in df_all
-            df_all_.columns = [f.replace(ch_subcortex_sel[0], ch_subcortex_rep[0]) for f in df_all_.columns]
-            df_all_.columns = [f.replace(ch_subcortex_sel[1], ch_subcortex_rep[1]) for f in df_all_.columns]
+            df_all_.columns = [f.replace(ch_subcortex_sel[0], "ch_subcortex_1") for f in df_all_.columns]
+            df_all_.columns = [f.replace(ch_subcortex_sel[1], "ch_subcortex_2") for f in df_all_.columns]
             # remove columns that contain "coh"
             df_all_ = df_all_.drop(columns=df_all_.columns[df_all_.columns.str.contains("coh")])
             df_all_["sub"] = sub

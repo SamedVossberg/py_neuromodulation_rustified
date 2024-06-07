@@ -157,7 +157,7 @@ def get_most_recorded_chs(df_all):
         else:
             size_.append(0)
     # get the names of the two most recorded channels
-    ch_cortex_sel = [cortex_ch_names[i] for i in np.argsort(size_)[::-1][:2]]
+    ch_cortex_sel = list(np.sort([cortex_ch_names[i] for i in np.argsort(size_)[::-1][:2]]))
     
     size_ = []
     for ch in subcortex_ch_names:
@@ -168,7 +168,7 @@ def get_most_recorded_chs(df_all):
         else:
             size_.append(0)
     # get the names of the two most recorded channels
-    ch_subcortex_sel = [subcortex_ch_names[i] for i in np.argsort(size_)[::-1][:2]]
+    ch_subcortex_sel = list(np.sort([subcortex_ch_names[i] for i in np.argsort(size_)[::-1][:2]]))
     return ch_cortex_sel, ch_subcortex_sel
 
 def estimate_within_subject_ML(df_all):
@@ -254,10 +254,10 @@ if __name__ == "__main__":
             # select only columns that contain in thir names the two most recorded channels or pkg_dk
             
             l_ch_names.append({
-                "ch_cortex_1" : ch_cortex_rep[0],
-                "ch_cortex_2" : ch_cortex_rep[1],
-                "ch_subcortex_1" : ch_subcortex_rep[0],
-                "ch_subcortex_2" : ch_subcortex_rep[1],
+                "ch_cortex_1" : ch_cortex_sel[0],
+                "ch_cortex_2" : ch_cortex_sel[1],
+                "ch_subcortex_1" : ch_subcortex_sel[0],
+                "ch_subcortex_2" : ch_subcortex_sel[1],
                 "sub" : sub
             })
             
@@ -271,10 +271,13 @@ if __name__ == "__main__":
             df_all_["sub"] = sub
             #estimate_correlation(df_all_, sub)
             df_all_comb.append(df_all_)
+        df_ch_names = pd.DataFrame(l_ch_names)
+        df_ch_names = df_ch_names.sort_values(by="sub")
+        df_ch_names.to_csv("ch_used_per_sub.csv")
         df_all_comb = pd.concat(df_all_comb, axis=0)
         df_all_comb.to_csv(os.path.join(PATH_OUT, "all_merged.csv"))
     
-    SEL_ONLY_ONLY_CH_PER_HEM = True
+    SEL_ONLY_ONLY_CH_PER_HEM = False
     # This serves to replace all NaN values
     if SEL_ONLY_ONLY_CH_PER_HEM is True:
         df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged.csv"), index_col=0)
@@ -286,8 +289,8 @@ if __name__ == "__main__":
         ch_cortex_ = ["ch_cortex_1_raw_mean", "ch_cortex_2_raw_mean"]
         ch_subcortex_ = ["ch_subcortex_1_raw_mean", "ch_subcortex_2_raw_mean"]
 
-        # select only rows where at least one of ch_cortex is not NaN and at least one of ch_subcortex is not NaN
         msk_row_select = df_all[ch_cortex_].sum(axis=1).apply(lambda x: x!=0) & df_all[ch_subcortex_].sum(axis=1).apply(lambda x: x!=0)
+        
         df_all_sel = df_all[msk_row_select]
         # get the first cortex channel for each row that is not NaN
         ch_cortex_1 = df_all_sel[ch_cortex_].apply(lambda x: x.dropna().index[0][:11], axis=1)
@@ -331,3 +334,21 @@ if __name__ == "__main__":
             plt.yticks(ticks=np.arange(df_all_sel_.shape[0]), labels=df_all_sel_.index)
 
 
+    SELECT_ONLY_ROWS_WITH_BOTH_PRESENT = True
+    if SELECT_ONLY_ROWS_WITH_BOTH_PRESENT:
+        df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged.csv"), index_col=0)
+        # delete all columns with sum up to zero
+        raw_cols = [f for f in df_all.columns if "raw" in f and "mean" in f]
+        msk_row_select = df_all[raw_cols].sum(axis=1).apply(lambda x: x!=0)
+        df_all = df_all[msk_row_select]
+
+        ch_cortex_ = ["ch_cortex_1_raw_mean", "ch_cortex_2_raw_mean"]
+        ch_subcortex_ = ["ch_subcortex_1_raw_mean", "ch_subcortex_2_raw_mean"]
+
+        df_sel = df_all[ch_cortex_ + ch_subcortex_]
+        # select only rows where there are no NaN values
+        df_sel_no_nan = df_sel.dropna(axis=0)
+
+
+
+        

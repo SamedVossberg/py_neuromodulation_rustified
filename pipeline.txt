@@ -2,3 +2,9 @@
 1. run_ucsf_features.py
 2. merge_ucsf_features.py
 3. post_hoc_normalize_polars.py
+
+connectome channel selection:
+1. connectome_get_hull_fps.py
+2. connectome_get_ch_ind_per.py
+3. connectome_compute_rmap_sel.py
+(plot ECoG performances: plot_ind_coords.ipynb)

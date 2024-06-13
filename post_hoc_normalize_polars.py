@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 import time
 from matplotlib import pyplot as plt
 
-PATH_IN = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length"
+PATH_IN = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length_all_ch"
 PATH_OUT_BASE = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length"
 
 def process_sub(sub, normalization_window, df_all):
@@ -76,7 +76,7 @@ def process_sub(sub, normalization_window, df_all):
         df_normed.write_csv(os.path.join(PATH_OUT, f"merged_normed_{sub}.csv"))
 
 if __name__ == "__main__":
-    df_all = pl.read_csv(os.path.join(PATH_IN, "all_merged_preprocessed.csv"))
+    df_all = pl.read_csv(os.path.join(PATH_IN, "all_merged_rmap_sel.csv"))
     #df_all = df_all.with_columns(pl.col("pkg_dt").str.strptime(pl.Datetime, fmt="%Y-%m-%d %H:%M:%S"))
 
     df_all = df_all.with_columns(pl.Series("pkg_dt", df_all["pkg_dt"].str.to_datetime()))
@@ -85,7 +85,8 @@ if __name__ == "__main__":
     subs = df_all["sub"].unique().to_list()
 
     # [5, 10, 20, 30, 60, 120]
-    times_min = np.array([3, 5, 8, 12, 16, 20, 24])*60
+    # np.array([3, 5, 8, 12, 16, 20, 24])*60
+    times_min = [480]
     for normalization_window in times_min:
         PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window))
         if not os.path.exists(PATH_OUT):
@@ -98,4 +99,4 @@ if __name__ == "__main__":
 
         files = [os.path.join(PATH_OUT, f) for f in os.listdir(PATH_OUT) if "merged_normed_" in f]
         df_list = [pl.read_csv(f) for f in files]
-        pl.concat(df_list).write_csv(os.path.join(PATH_OUT, "all_merged_normed.csv"))
+        pl.concat(df_list).write_csv(os.path.join(PATH_OUT, "all_merged_normed_rmap.csv"))

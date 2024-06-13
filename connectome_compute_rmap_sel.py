@@ -43,4 +43,12 @@ for sub_test in fps_all.keys():
     )
 
 df_corr = pd.DataFrame(d_corr)
-df_corr.to_csv("rmap_corr.csv")
+# remove entry of rcs11r channel 9-10
+df_corr = df_corr.query("not (sub == 'rcs11r' and ch == '9-10')")
+df_corr = df_corr.query("not (sub == 'rcs11l' and ch == '9-10')")
+df_corr = df_corr.query("not (sub == 'rcs17l' and ch == '10-11')")
+df_corr = df_corr.query("not (sub == 'rcs17r' and ch == '10-11')")
+df_corr = df_corr.query("not (sub == 'rcs20l' and ch == '10-11')")
+df_corr = df_corr.query("not (sub == 'rcs20r' and ch == '10-11')")
+
+df_corr.to_csv("out_per/rmap_corr.csv")

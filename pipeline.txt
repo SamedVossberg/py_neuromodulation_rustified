@@ -7,4 +7,5 @@ connectome channel selection:
 1. connectome_get_hull_fps.py
 2. connectome_get_ch_ind_per.py
 3. connectome_compute_rmap_sel.py
+4. connectome_select_ch_write_out_joined_df.py
 (plot ECoG performances: plot_ind_coords.ipynb)

@@ -68,6 +68,17 @@ for sub in updrs_.keys():
 
 df_updrs = pd.DataFrame(l_)
 
+plt.figure()
+df_updrs["DYS"] = df_updrs["updrs"] > 0
+sns.boxplot(x="DYS", y="ba", data=df_updrs, showmeans=True)
+sns.swarmplot(x="DYS", y="ba", data=df_updrs, color=".25")
+plt.xlabel("Dyskinesia")
+plt.ylabel("Balanced accuracy")
+plt.title("Balanced accuracy per dyskinesia status")
+plt.tight_layout()
+plt.savefig("figures_ucsf/boxplot_dys_no_dys.pdf")
+plt.show(block=True)
+
 # show in a regplot the correlation of the decoding accuracy with the updrs score
 plt.figure()
 

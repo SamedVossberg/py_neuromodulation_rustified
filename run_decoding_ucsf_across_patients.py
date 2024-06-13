@@ -19,18 +19,22 @@ from matplotlib.backends.backend_pdf import PdfPages
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length/480"
 
 CLASSIFICATION = True
+EXCLUDE_ZERO_UPDRS_DYK = True
+subs_no_dyk = ["rcs10", "rcs14", "rcs15", "rcs19"]
 
-MODEL_NAME = "RF" # "CB", "LM", "XGB", "PCA_LM", "CEBRA", "RF"
+MODEL_NAME = "CB" # "CB", "LM", "XGB", "PCA_LM", "CEBRA", "RF"
 
 if __name__ == "__main__":
 
-    df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged_normed.csv"), index_col=0)
+    df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged_normed_rmap.csv"), index_col=0)
     # drop all columns that contain "psd"
     
     #df_all = df_all[[c for c in df_all.columns if "psd" not in c]]
     
     #df_all = df_all.drop(columns=["Unnamed: 0"])
     subs = df_all["sub"].unique()
+    if EXCLUDE_ZERO_UPDRS_DYK:
+        subs = [s for s in subs if not any([s_no for s_no in subs_no_dyk if s_no in s])]
 
     d_out = {}
     
@@ -49,16 +53,20 @@ if __name__ == "__main__":
     df_all = df_all[mask]
     
     for loc_ in ["ecog_stn", "ecog", "stn",]:
+        if loc_ != "ecog":
+            continue
         d_out[label_name][loc_] = {}
-        pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_{MODEL_NAME}.pdf")) 
+        pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_{MODEL_NAME}_rmap_only_dyk_subs.pdf")) 
         if loc_ == "ecog_stn":
             df_use = df_all.copy()
         elif loc_ == "ecog":
-            df_use = df_all[[c for c in df_all.columns if c.startswith("ch_cortex") or c.startswith("pkg") or c.startswith("sub")]].copy()
+            df_use = df_all[[c for c in df_all.columns if c.startswith("cortex") or c.startswith("pkg") or c.startswith("sub")]].copy()
         elif loc_ == "stn":
             df_use = df_all[[c for c in df_all.columns if c.startswith("ch_subcortex") or c.startswith("pkg") or c.startswith("sub")]].copy()
 
         for sub_test in subs:  # tqdm(
+            print(f"sub_test: {sub_test}")
+
             df_test = df_use[df_use["sub"] == sub_test]
 
             df_test = df_test.drop(columns=["sub"])
@@ -195,7 +203,7 @@ if __name__ == "__main__":
 
     # save d_out to a pickle file
     if CLASSIFICATION:
-        SAVE_NAME = f"d_out_patient_across_class_10s_seglength_480_all_{MODEL_NAME}.pkl"
+        SAVE_NAME = f"d_out_patient_across_class_10s_seglength_480_all_{MODEL_NAME}_rmap_only_dyk_subs.pkl"
     else:
         SAVE_NAME = "d_out_patient_across_reg.pkl"
     with open(os.path.join("out_per", SAVE_NAME), "wb") as f:

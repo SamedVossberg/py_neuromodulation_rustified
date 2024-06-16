@@ -52,6 +52,7 @@ for sub in updrs_.keys():
         {
             "sub": sub,
             "mean": df_all[mask]["pkg_dk"].mean(),
+            "quantile_75" : df_all[mask]["pkg_dk"].quantile(0.75),
             "median": df_all[mask]["pkg_dk"].median(),
             "max" : df_all[mask]["pkg_dk"].max(),
             "updrs" : updrs_[sub]
@@ -60,15 +61,18 @@ for sub in updrs_.keys():
 df_updrs = pd.DataFrame(l_)
 
 plt.figure()
-plt.subplot(1, 3, 1)
+plt.subplot(1, 4, 1)
 sb.regplot(x="updrs", y="mean", data=df_updrs)
 plt.title("Mean")
-plt.subplot(1, 3, 2)
+plt.subplot(1, 4, 2)
 sb.regplot(x="updrs", y="median", data=df_updrs)
 plt.title("Median")
-plt.subplot(1, 3, 3)
+plt.subplot(1, 4, 3)
 sb.regplot(x="updrs", y="max", data=df_updrs)
 plt.title("Max")
+plt.subplot(1, 4, 4)
+sb.regplot(x="updrs", y="quantile_75", data=df_updrs)
+
 plt.suptitle("UPDRS IV scores vs. PKG dyskinesia scores")
 plt.tight_layout()
 plt.savefig(os.path.join("figures_ucsf", "updrs_vs_pkg.pdf"))

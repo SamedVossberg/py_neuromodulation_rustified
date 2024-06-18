@@ -7,6 +7,8 @@ from sklearn import metrics
 
 from catboost import Pool, CatBoostClassifier
 from bayes_opt import BayesianOptimization
+from bayes_opt.logger import JSONLogger
+from bayes_opt.event import Events
 
 from sklearn.utils.class_weight import compute_class_weight
 
@@ -152,6 +154,8 @@ def get_per(iterations, depth, learning_rate, l2_leaf_reg, border_count):
 if __name__ == "__main__":
     # Initialize BayesSearchCV
     optimizer = BayesianOptimization(f=get_per, pbounds=pbounds, random_state=42)
+    logger = JSONLogger(path=os.path.join(PATH_OUT, "log.json"))
+    optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
 
     optimizer.maximize(init_points=5, n_iter=45)
 

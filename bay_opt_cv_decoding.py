@@ -18,8 +18,8 @@ PATH_OUT = (
 PATH_READ = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_normalized_10s_window_length/480"
 PATH_OUT = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per/bo"
 
-PATH_READ = r"C:\Users\ICN_GPU\Downloads"
-PATH_OUT = r"C:\Users\ICN_GPU\Downloads\out"
+#PATH_READ = r"C:\Users\ICN_GPU\Downloads"
+#PATH_OUT = r"C:\Users\ICN_GPU\Downloads\out"
 
 pbounds = {
     "iterations": (100, 1000),
@@ -114,7 +114,7 @@ def get_per(iterations, depth, learning_rate, l2_leaf_reg, border_count):
             l2_leaf_reg=l2_leaf_reg,
             border_count=border_count,
             class_weights=class_weights,
-            task_type="GPU",
+            task_type="CPU",
             verbose=0,
             random_seed=42,
         )

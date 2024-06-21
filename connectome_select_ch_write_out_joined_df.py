@@ -4,8 +4,10 @@ import os
 from matplotlib import pyplot as plt
 
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length_all_ch"
+PATH_OUT = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_std_10s_window_length_all_ch"
+PATH_PER = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per"
 
-df_per = pd.read_csv("out_per/rmap_corr.csv")
+df_per = pd.read_csv(os.path.join(PATH_PER, "rmap_corr.csv"))
 
 # select for each patient only the RMAP selected channel
 df_merge = []

@@ -2,16 +2,42 @@ import pickle
 import pandas as pd
 import numpy as np
 from py_neuromodulation import nm_RMAP
+import os
+import nibabel as nib
 
-ch_coords = pd.read_csv("ch_coords_mean.csv")
+PATH_PER = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per"
+ch_coords = pd.read_csv(os.path.join(PATH_PER, "ch_coords_mean.csv"))
 
-with open("fps_all.pkl", "rb") as f:
+with open(os.path.join(PATH_PER, "fps_all.pkl"), "rb") as f:
     fps_all = pickle.load(f)
 
-ch_pe = pd.read_csv("out_per/df_per_ind.csv")
+ch_pe = pd.read_csv(os.path.join(PATH_PER, "df_per_ind.csv"))
 #ch_pe["per"] = ch_pe["per"].apply(lambda x: 0.5 if x < 0.5 else x)
 
 rmap_sel = nm_RMAP.RMAPCross_Val_ChannelSelector()
+
+SAVE_RMAP = False
+
+if SAVE_RMAP:
+
+    PATH_AFFINE_EXAMPLE = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Dokumente/Decoding toolbox/Movement/Connectivity Estimates/functional connectivity/Berlin_001_ROI_ECOG_L_1_2_SMC_AT-avgref_func_seed_AvgR.nii"
+    epi_img = nib.load(PATH_AFFINE_EXAMPLE)
+    affine = epi_img.affine
+    X_ = []
+    y_ = []
+
+    for sub_train in fps_all.keys():
+
+        for ch in fps_all[sub_train].keys():
+            df_sub = ch_pe.query("sub == @sub_train")
+            if ch not in df_sub["ch"].values:
+                continue
+            X_.append(fps_all[sub_train][ch].flatten())
+            y_.append(ch_pe.query("sub == @sub_train and ch == @ch")["per"].iloc[0])
+    #rmap_ = rmap_sel.calculate_RMap_numba(X_, y_)
+    rmap_ = np.nan_to_num(rmap_sel.get_RMAP(np.array(X_).T,  np.array(y_)))
+    rmap_sel.save_Nii(rmap_, affine, os.path.join(PATH_PER, "rmap_func_dyk.nii"))
+
 d_corr = []
 ch_use = []
 for sub_test in fps_all.keys():
@@ -21,6 +47,9 @@ for sub_test in fps_all.keys():
         if sub_test == sub_train:
             continue
         for ch in fps_all[sub_train].keys():
+            df_sub = ch_pe.query("sub == @sub_train")
+            if ch not in df_sub["ch"].values:
+                continue
             X_.append(fps_all[sub_train][ch].flatten())
             y_.append(ch_pe.query("sub == @sub_train and ch == @ch")["per"].iloc[0])
     #rmap_ = rmap_sel.calculate_RMap_numba(X_, y_)

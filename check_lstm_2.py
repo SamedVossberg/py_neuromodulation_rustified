@@ -99,7 +99,9 @@ def predict(model, dataloader):
 
 if __name__ == "__main__":
     # Sample data: n_sequences x seq_length x input_size
-    data_raw = np.load(r"E:\Downloads\all_merged_normed_rmap.npy", allow_pickle=True)
+    PATH_ = r"E:\Downloads\all_merged_normed_rmap.npy"
+    PATH_ = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_normalized_10s_window_length/480/all_merged_normed_rmap.npy"
+    data_raw = np.load(PATH_, allow_pickle=True)
     labels = data_raw[:, -1, -3].astype(float)
     data = data_raw[:, :, :-4].astype(float)
 
@@ -107,10 +109,12 @@ if __name__ == "__main__":
     hidden_size = 50
     num_layers = 1
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = LSTMModel(input_size, hidden_size, num_layers).to(device)
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('mps')
 
     transform = ToTensor()
+
+    ba_ = []
 
     for sub_idx in np.unique(data_raw[:, -1, -1]):
         train_idx = np.where(data_raw[:, -1, -1] != sub_idx)
@@ -130,7 +134,8 @@ if __name__ == "__main__":
         data_test = DataLoader(dataset_test, batch_size=32, shuffle=False, num_workers=1)
 
         # Reset model parameters before each training session
-        model.reset_parameters()
+        #model.reset_parameters()
+        model = LSTMModel(input_size, hidden_size, num_layers).to(device)
 
         # Train the model
         train_model(model, dataloader_train, num_epochs=20, learning_rate=0.001)
@@ -139,4 +144,14 @@ if __name__ == "__main__":
         test_predictions = predict(model, data_test)
         test_predictions_binary = (test_predictions >= 0.5).astype(int)
 
-        print(f"Balanced Accuracy: {metrics.balanced_accuracy_score(y_test, test_predictions_binary)}")
+        ba = metrics.balanced_accuracy_score(y_test, test_predictions_binary)
+        print(f"Balanced Accuracy: {ba}")
+
+        ba_.append(ba)
+    
+    # save ba_ to pickle
+    import pickle
+    with open("ba_.pkl", "wb") as f:
+        pickle.dump(ba_, f)
+
+

@@ -130,8 +130,8 @@ if __name__ == "__main__":
         dataset_test = CustomSequenceDataset(data=X_test, labels=y_test, transform=transform)
 
         # Create the DataLoader
-        dataloader_train = DataLoader(dataset_train, batch_size=32, shuffle=True, num_workers=1)
-        data_test = DataLoader(dataset_test, batch_size=32, shuffle=False, num_workers=1)
+        dataloader_train = DataLoader(dataset_train, batch_size=500, shuffle=True, num_workers=1)
+        data_test = DataLoader(dataset_test, batch_size=500, shuffle=False, num_workers=1)
 
         # Reset model parameters before each training session
         #model.reset_parameters()

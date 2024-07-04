@@ -4,8 +4,9 @@ import numpy as np
 
 #
 PATH_DATA = r"E:\Downloads\all_merged_normed_rmap.csv"
-PATH_DATA = r"C:\Users\ICN_GPU\Downloads\all_merged_normed_rmap.csv"
 PATH_DATA = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_normalized_10s_window_length/480/all_merged_normed_rmap.csv"
+#PATH_DATA = r"C:\Users\ICN_GPU\Downloads\all_merged_normed_rmap.csv"
+#PATH_DATA = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_normalized_10s_window_length/480/all_merged_normed_rmap.csv"
 
 df = pd.read_csv(PATH_DATA)
 
@@ -36,7 +37,7 @@ cols_add = [
     for f in df_all.columns
     if f.startswith("cortex")
     or f == "sub_idx"
-    or f == "pkg_dk_class"
+    or f == "pkg_dk_class"  # pkg_bk_class
     or f == "pkg_dk_normed"
     or f == "pkg_dt"
     or f == "cortex_hour"

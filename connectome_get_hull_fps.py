@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy as np
+import os
 
 # get the channel used for every patient
-df_ch_used = pd.read_csv("ch_used_per_sub.csv")
+PATH_PER = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per"
+
+df_ch_used = pd.read_csv(os.path.join(PATH_PER, "ch_used_per_sub.csv"))
 df_coords = pd.read_csv("RCSall_ecog_MNI_coordinates_labels.csv")
 df_coords["sub"] = df_coords["Contact_ID"].apply(lambda x: x[:7].lower().replace("_", ""))
 df_coords["ch"] = df_coords["Contact_ID"].apply(lambda x: int(x[7:]))
@@ -22,15 +25,15 @@ for idx, row in df_ch_used.iterrows():
         l_.append({
             "sub": sub,
             "ch": row[ch_],
-            "MNI_X": ch_mean[0],
+            "MNI_X": np.abs(ch_mean[0]),
             "MNI_Y": ch_mean[1],
             "MNI_Z": ch_mean[2]
         })
 df_ch_coords = pd.DataFrame(l_)
-df_ch_coords.to_csv("ch_coords_mean.csv", index=False)
+df_ch_coords.to_csv(os.path.join(PATH_PER, "ch_coords_mean.csv"), index=False)
 
 # Create repetitively the RMAP for each patient
-df_ch_coords = pd.read_csv("ch_coords_mean.csv")
+df_ch_coords = pd.read_csv(os.path.join(PATH_PER, "ch_coords_mean.csv"))
 
 from py_neuromodulation import nm_RMAP
 # first, get the fingerprint for each patient, then compute the RMAP for each patient
@@ -54,6 +57,6 @@ for sub in df_ch_coords["sub"].unique():
 
 # save fps_all to pickle
 import pickle
-with open("fps_all.pkl", "wb") as f:
+with open(os.path.join(PATH_PER, "fps_all.pkl"), "wb") as f:
     pickle.dump(fps_all, f)
 

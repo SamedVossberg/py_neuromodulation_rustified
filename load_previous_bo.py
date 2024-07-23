@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import numpy as np
 from sklearn import metrics
+from matplotlib import pyplot as plt
 
 from catboost import Pool, CatBoostClassifier
 from bayes_opt import BayesianOptimization
@@ -11,15 +12,6 @@ from bayes_opt.logger import JSONLogger
 from bayes_opt.event import Events
 
 from sklearn.utils.class_weight import compute_class_weight
-
-PATH_OUT = (
-    "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length/480"
-)
-PATH_READ = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_normalized_10s_window_length/480"
-PATH_OUT = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per/bo"
-
-#PATH_READ = r"C:\Users\ICN_GPU\Downloads"
-#PATH_OUT = r"C:\Users\ICN_GPU\Downloads\out"
 
 pbounds = {
     "iterations": (100, 1000),
@@ -153,19 +145,25 @@ def get_per(iterations, depth, learning_rate, l2_leaf_reg, border_count):
 
 if __name__ == "__main__":
     # Initialize BayesSearchCV
-    optimizer = BayesianOptimization(f=get_per, pbounds=pbounds, random_state=42)
-    logger = JSONLogger(path=os.path.join(PATH_OUT, "log.json"))
-    optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
 
-    optimizer.maximize(init_points=5, n_iter=45)
+    PATH_OUT = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per/bo"
+    PATH_FIGURES = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/figures_ucsf"
+    from bayes_opt.util import load_logs
 
-    # Get the best parameters and corresponding balanced accuracy
-    best_params = optimizer.max["params"]
-    best_params["iterations"] = int(best_params["iterations"])
-    best_params["depth"] = int(best_params["depth"])
-    best_params["border_count"] = int(best_params["border_count"])
+    # load previous optimization
+    new_optimizer = BayesianOptimization(
+        f=get_per, pbounds=pbounds, random_state=42
+    )
 
-    balanced_accuracy = get_per(**best_params)
+    load_logs(new_optimizer, logs=[os.path.join(PATH_OUT, "log.json")])
 
-    print(f"Best Balanced Accuracy from Bayesian Optimization: {balanced_accuracy}")
-    print(f"Best Parameters: {best_params}")
+    bas = [f["target"] for f in new_optimizer.res]
+
+    plt.figure()
+    plt.plot(bas)
+    plt.xlabel("Optimization iterations")
+    plt.ylabel("Balanced accuracy")
+    plt.title("Optimization progress")
+    plt.tight_layout()
+    plt.savefig(os.path.join(PATH_FIGURES, "optimization_progress.pdf"))
+    plt.show(block=True)

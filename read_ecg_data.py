@@ -2,6 +2,7 @@ import mne
 import pandas as pd
 import numpy as np
 from operator import itemgetter
+from matplotlib import pyplot as plt
 
 
 import py_neuromodulation as nm
@@ -13,6 +14,12 @@ if __name__ == "__main__":
     PATH_READ = r"C:\code\ECG\sub-EL011_ses-EcogLfpMedOff01_task-Rest_acq-StimOff_run-1_ieeg.vhdr"
 
     raw = mne.io.read_raw_brainvision(PATH_READ, preload=True)
+
+    raw.pick(["ECG", "LFP_R_02_STN_MT"])  # "ECOG_R_01_SMC_AT", 
+    raw.plot(block=True)
+
+    raw.compute_psd().plot()
+    plt.show(block=True)
 
     PATH_CSV = r"C:\code\ECG\rpeak_vector.csv"
 

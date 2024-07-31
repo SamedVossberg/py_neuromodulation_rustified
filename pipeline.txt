@@ -9,3 +9,4 @@ connectome channel selection:
 3. connectome_compute_rmap_sel.py
 4. connectome_select_ch_write_out_joined_df.py
 (plot ECoG performances: plot_ind_coords.ipynb)
+5. post_hoc_normalize_polars.py

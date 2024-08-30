@@ -38,7 +38,6 @@ dependencies = [
     "mne-connectivity",
     "mrmr_selection",
     "nolds",
-    "numpy>=2.0.0",
     "pandas >= 1.2.2",
     "scikit-image",
     "scikit-learn >= 0.24.2",
@@ -55,7 +54,7 @@ dependencies = [
     "pynput>=1.7.7",
     "pyqt5",
     "catboost>=1.2.5",
-    "ipython>=8.24.0",
+    "ipython>=8.26.0",
     "pip>=24.0",
     "cebra>=0.4.0",
     "xgboost>=2.0.3",
@@ -67,7 +66,8 @@ dependencies = [
     "pyvistaqt>=0.11.0",
     "jupyter>=1.0.0",
     "bayesian-optimization>=1.4.3",
-    "torch>=2.3.1",
+    "llvmlite>=0.43.0",
+    "torch>=2.2.2",
 ]
 
 [project.optional-dependencies]

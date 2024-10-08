@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn import metrics
 import seaborn as sns
+import os
 import pandas as pd
 
 # all labels: 0.768, 0.76, 0.619
@@ -11,6 +12,8 @@ import pandas as pd
 # with NaN: 0.76, 0.74, 0.6
 
 PATH_PER = r"E:\Downloads\d_out_patient_across_class_10s_seglength_480_all_CEBRA_all_labels_wo_spec_CEBRA.pkl"
+PATH_PER = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per/d_out_patient_across_class_10s_seglength_480_all_CB_all_labels.pkl"
+PATH_FIGURES = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/figures_ucsf"
 with open(PATH_PER, "rb") as f:
     d_out = pickle.load(f)["all"]
 
@@ -34,7 +37,7 @@ for loc in d_out.keys():
             ba = np.round(
                 metrics.balanced_accuracy_score(
                     d_out[loc][sub]["y_"][:, idx],
-                    d_out[loc][sub]["pr_proba"][idx][:, 1] > 0.5,
+                    d_out[loc][sub]["pr_proba"][:, idx] > 0.5,
                 ),
                 2,
             )
@@ -68,11 +71,12 @@ df = pd.DataFrame(df_per)
 
 # show in boxplot and stripplot
 plt.figure()
-sns.boxplot(x="label", y="ba", hue="loc", data=df, showfliers=False, showmeans=True)
-sns.stripplot(x="label", y="ba", data=df, color=".3", hue="loc", dodge=True)
+sns.boxplot(x="label", y="ba", hue="loc", data=df, showfliers=False, palette="viridis", showmeans=True)
+sns.stripplot(x="label", y="ba", data=df, color=".3", hue="loc", dodge=True, palette="viridis")
 plt.ylabel("Balanced accuracy")
 plt.title("Dyskinesia, Bradykinesia and Tremor decoding")
 # add 0.5 chance line
 plt.axhline(0.5, color="black", linestyle="--")
 plt.tight_layout()
+plt.savefig(os.path.join(PATH_FIGURES, "per_all_labels_wo_spec_with_NaN.pdf"))
 plt.show(block=True)

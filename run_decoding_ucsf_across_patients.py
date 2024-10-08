@@ -16,17 +16,23 @@ from catboost import CatBoostRegressor, Pool, CatBoostClassifier
 from xgboost import XGBClassifier
 from matplotlib.backends.backend_pdf import PdfPages
 
-PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length/480"
+#PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length/480"
+PATH_READ = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_normalized_10s_window_length/480"
+PATH_FIGURES = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/figures_ucsf"
+PATH_PER = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU"
 
 CLASSIFICATION = True
-EXCLUDE_ZERO_UPDRS_DYK = True
+EXCLUDE_ZERO_UPDRS_DYK = False
+EXCLUDE_NIGHT_TIME = True
+
 subs_no_dyk = ["rcs10", "rcs14", "rcs15", "rcs19"]
 
 MODEL_NAME = "CB" # "CB", "LM", "XGB", "PCA_LM", "CEBRA", "RF"
 
 if __name__ == "__main__":
 
-    df_all = pd.read_csv(os.path.join(PATH_OUT, "all_merged_normed_rmap.csv"), index_col=0)
+    df_all = pd.read_csv(os.path.join(PATH_READ, "all_merged_normed_rmap.csv"), index_col=0)
+
     # drop all columns that contain "psd"
     
     #df_all = df_all[[c for c in df_all.columns if "psd" not in c]]
@@ -49,14 +55,17 @@ if __name__ == "__main__":
 
     df_all = df_all.drop(columns=df_all.columns[df_all.isnull().all()])
     df_all["pkg_dt"] = pd.to_datetime(df_all["pkg_dt"])
+    if EXCLUDE_NIGHT_TIME:
+        df_all = df_all[(df_all["pkg_dt"].dt.hour >= 9) & (df_all["pkg_dt"].dt.hour <= 18)]
+    
     mask = ~df_all[label_name].isnull()
     df_all = df_all[mask]
     
-    for loc_ in ["ecog_stn", "ecog", "stn",]:
-        if loc_ != "ecog":
-            continue
+    for loc_ in ["ecog_stn",]:  #  "ecog", "stn"
+        #if loc_ != "ecog":
+        #    continue
         d_out[label_name][loc_] = {}
-        pdf_pages = PdfPages(os.path.join("figures_ucsf", f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_{MODEL_NAME}_rmap_only_dyk_subs.pdf")) 
+        pdf_pages = PdfPages(os.path.join(PATH_FIGURES, f"decoding_across_patients_class_{label_name}_{loc_}_10s_segmentlength_all_{MODEL_NAME}_tests.pdf")) 
         if loc_ == "ecog_stn":
             df_use = df_all.copy()
         elif loc_ == "ecog":
@@ -206,5 +215,5 @@ if __name__ == "__main__":
         SAVE_NAME = f"d_out_patient_across_class_10s_seglength_480_all_{MODEL_NAME}_rmap_only_dyk_subs.pkl"
     else:
         SAVE_NAME = "d_out_patient_across_reg.pkl"
-    with open(os.path.join("out_per", SAVE_NAME), "wb") as f:
+    with open(os.path.join(PATH_PER, SAVE_NAME), "wb") as f:
         pickle.dump(d_out, f)

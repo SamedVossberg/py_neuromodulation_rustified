@@ -153,8 +153,8 @@ if __name__ == "__main__":
                 "per": row["per"],
                 "loc": loc,
             })
-    df_per_ind_all_coords = pd.DataFrame(l_)
-    df_per_ind_all_coords.to_csv(os.path.join(PATH_PER, "df_per_ind_all_coords.csv"))
+        df_per_ind_all_coords = pd.DataFrame(l_)
+        df_per_ind_all_coords.to_csv(os.path.join(PATH_PER, "df_per_ind_all_coords.csv"))
 
     PLOT = True
     if PLOT:
@@ -232,39 +232,51 @@ if __name__ == "__main__":
     # load the GPi coordinates
     PATH_GPI = r"/Users/Timon/Downloads/v_1_1/DISTAL (Ewert 2017)/lh/STN.nii"
     PATH_GPI = r"/Users/Timon/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/AHEAD Atlas (Alkemade 2020)/lh/GPi_mask.nii"
-    PATH_GPI = r"/Users/Timon/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Nano (Ewert 2017)/lh/STN.nii"
+    
     #PATH_GPI = r"/Users/Timon/Downloads/v_1_1/DISTAL Minimal (Ewert 2017)/lh/GPi.nii"
-    #PATH_GPI = r"/Users/Timon/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Nano (Ewert 2017)/lh/GPi.nii"
+    PATH_GPI = r"/Users/Timon/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Nano (Ewert 2017)/lh/GPi.nii"
+    
+    PATH_GPI = r"/Users/Timon/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Nano (Ewert 2017)/lh/GPi_mask.nii"
+    PATH_GPI = r"/Users/Timon/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/AHEAD Atlas (Alkemade 2020)/lh/GPi_mask.nii"
+
+    PATH_GPI = r"/Users/Timon/Documents/MATLAB/leaddbs/templates/space/MNI152NLin2009bAsym/atlases/DISTAL Nano (Ewert 2017)/lh/GPi.nii"
     import nibabel as nib
     img = nib.load(PATH_GPI)
     data = img.get_fdata()
+    affine = img.affine
     x_gpi, y_gpi, z_gpi = np.where(data > 0)
-    
-    df_query = df.query("loc == 'GP' and label== 'pkg_dk' and classification == False")
-    gp_strip_xyz = df_query[["x", "y", "z"]].values
-    strip_color = df_query["per"]
+
+    voxel_indices = np.array([x_gpi, y_gpi, z_gpi]).T
+    mni_coords = nib.affines.apply_affine(affine, voxel_indices)
+    x_gpi = mni_coords[:, 0]
+    y_gpi = mni_coords[:,1]
+    z_gpi = mni_coords[:,2]
+
+    df_query_GP = df.query("loc == 'GP' and label== 'pkg_dk' and classification == False")
+    gp_strip_xyz = df_query_GP[["x", "y", "z"]].values
+    strip_color_GP = df_query_GP["per"]
 
     fig, axes = plt.subplots(1, 1, facecolor=(1, 1, 1), figsize=(14, 9))
-    axes.scatter(x_gpi, z_gpi, c="gray", s=0.025)
-    axes.scatter(x_stn, z_stn, c="gray", s=0.025)
+    axes.scatter(x_gpi, y_gpi, c="gray", s=0.025)
+    axes.scatter(x_stn, y_stn, c="gray", s=0.025)
     axes.axes.set_aspect("equal", anchor="C")
     pos_gpi = axes.scatter(
                 gp_strip_xyz[:, 0],
-                gp_strip_xyz[:, 2],
-                c=np.clip(strip_color, 0, 1),
+                gp_strip_xyz[:, 1],
+                c=np.clip(strip_color_GP, 0, 1),
                 s=100,
                 alpha=0.8,
                 cmap="viridis",
                 marker="o",
                 label="ecog electrode",
             )
-    df_query = df.query("loc == 'STN' and label== 'pkg_dk' and classification == False")
-    stn_strip_xyz = df_query[["x", "y", "z"]].values
-    strip_color = df_query["per"]
+    df_query_STN = df.query("loc == 'STN' and label== 'pkg_dk' and classification == False")
+    stn_strip_xyz = df_query_STN[["x", "y", "z"]].values
+    strip_color_stn = df_query_STN["per"]
     pos_stn = axes.scatter(
             stn_strip_xyz[:, 0],
-            stn_strip_xyz[:, 2],
-            c=np.clip(strip_color, 0, 1),
+            stn_strip_xyz[:, 1],
+            c=np.clip(strip_color_stn, 0, 1),
             s=100,
             alpha=0.8,
             cmap="viridis",
@@ -273,3 +285,50 @@ if __name__ == "__main__":
         )
     axes.axis("off")
     plt.show(block=True)
+
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+
+# Assuming x_gpi, y_gpi, z_gpi, x_stn, y_stn, z_stn, gp_strip_xyz, strip_color_GP, df, and strip_color_stn are defined
+
+fig = plt.figure(facecolor=(1, 1, 1), figsize=(14, 9))
+axes = fig.add_subplot(111, projection='3d')
+
+# Scatter plot for GPI
+axes.scatter(x_gpi, y_gpi, z_gpi, c="gray", s=0.025)
+axes.scatter(x_stn, y_stn, z_stn, c="gray", s=0.025)
+
+# Scatter plot for GP strip
+pos_gpi = axes.scatter(
+    gp_strip_xyz[:, 0],
+    gp_strip_xyz[:, 1],
+    gp_strip_xyz[:, 2],
+    c=np.clip(strip_color_GP, 0, 1),
+    s=100,
+    alpha=0.8,
+    cmap="viridis",
+    marker="o",
+    label="ecog electrode",
+)
+
+# Query and scatter plot for STN strip
+df_query_STN = df.query("loc == 'STN' and label== 'pkg_dk' and classification == False")
+stn_strip_xyz = df_query_STN[["x", "y", "z"]].values
+strip_color_stn = df_query_STN["per"]
+pos_stn = axes.scatter(
+    stn_strip_xyz[:, 0],
+    stn_strip_xyz[:, 1],
+    stn_strip_xyz[:, 2],
+    c=np.clip(strip_color_stn, 0, 1),
+    s=100,
+    alpha=0.8,
+    cmap="viridis",
+    marker="o",
+    label="ecog electrode",
+)
+
+axes.set_aspect("equal")
+axes.axis("off")
+plt.show(block=True)

@@ -176,3 +176,8 @@ out_per/*
 .DS_Store
 
 Users/Timon/mne_data
+
+meshes/
+meshes
+# ignore everything in meshes
+meshes/mesh_my_plt/*

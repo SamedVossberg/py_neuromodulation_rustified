@@ -11,13 +11,15 @@ import warnings
 
 df_all_comb = []
 l_ch_names = []
-PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length_all_ch"
-PATH_READ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out_10s_window_length" #py-neuro_out"
+PATH_FEATURES = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features"
+PATH_PER = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per"
+PATH_OUT = os.path.join(PATH_FEATURES, "merged_std_10s_window_length_all_ch")
+PATH_READ = os.path.join(PATH_FEATURES, "py-neuro_out_10s_window_length") #py-neuro_out"
 
 subs_ = [f for f in os.listdir(PATH_READ) if os.path.isdir(os.path.join(PATH_READ, f))]
 # read fps_all.pkl
 import pickle
-with open("fps_all.pkl", "rb") as f:
+with open(os.path.join(PATH_PER, "fps_all.pkl"), "rb") as f:
     fps_all = pickle.load(f)
 
 per_ind  = []

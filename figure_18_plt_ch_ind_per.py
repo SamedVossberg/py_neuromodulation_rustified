@@ -1,8 +1,13 @@
 import pandas as pd
 import seaborn as sb
 from matplotlib import pyplot as plt
+import os
 
-df = pd.read_csv("out_per/df_per_ind.csv")
+PATH_PER = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per"
+PATH_FIGURES = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/figures_ucsf"
+
+
+df = pd.read_csv(os.path.join(PATH_PER, "df_per_ind.csv"))
 
 # set df region column, if ch == 8-9 or 8-10 then "MC", else "SC"
 df["region"] = "Sensory Cortex"
@@ -20,7 +25,7 @@ df = df[~((df["sub"] == "rcs17r") & (df["ch"] == "10-11"))]
 
 
 
-df.to_csv("out_per/df_per_ind.csv")
+df.to_csv(os.path.join(PATH_PER, "df_per_ind.csv"))
 
 sb.swarmplot(data=df, x="region", y="per", color=".25")
 sb.boxplot(data=df, x="region", y="per", boxprops=dict(alpha=.3), showmeans=True, showfliers=False)
@@ -32,5 +37,5 @@ plt.xlabel("Region")
 plt.ylabel("Balanced Accuracy")
 plt.title("Channel individual performances")
 plt.tight_layout()
-plt.savefig("ch_ind_per.pdf")
+plt.savefig(os.path.join(PATH_FIGURES, "ch_ind_per.pdf"))
 plt.show(block=True)

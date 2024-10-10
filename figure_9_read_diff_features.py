@@ -47,24 +47,29 @@ def read_pkg_out(PATH_):
 
 if __name__ == "__main__":
 
+    PATH_PER = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per"
+    PATH_FIGURES = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/figures_ucsf"
+
     l_norms = []
-    feature_mods = [f for f in os.listdir("out_per") if "feature_mod" in f and "480" in f]
+    feature_mods = [f for f in os.listdir(PATH_PER) if "feature_mod" in f and "480" in f]
     for feature_mod in feature_mods:
-        PATH_READ = os.path.join("out_per", feature_mod)
+        PATH_READ = os.path.join(PATH_PER, feature_mod)
 
         df = read_pkg_out(PATH_READ)
         df["feature_mod"] = feature_mod[feature_mod.find("feature_mod_")+len("feature_mod_"):feature_mod.find(".pkl")]
         l_norms.append(df)
-    PATH_READ = os.path.join("out_per", "d_out_patient_across_class_480.pkl")
+    PATH_READ = os.path.join(PATH_PER, "d_out_patient_across_class_480.pkl")
     df = read_pkg_out(PATH_READ)
     df["feature_mod"] = "all"
     l_norms.append(df)
 
     df_all = pd.concat(l_norms)
 
-    plt.figure()
+    plt.figure(figsize=(5, 5), dpi=300)
     sns.boxplot(x="feature_mod", y="ba", data=df_all, showmeans=True,
-                order=df_all.groupby("feature_mod")["ba"].mean().sort_values(ascending=True).index)
+                order=df_all.groupby("feature_mod")["ba"].mean().sort_values(ascending=True).index, palette="viridis", showfliers=False)
+    #sns.swarmplot(x="feature_mod", y="ba", data=df_all, color=".25",
+    #              order=df_all.groupby("feature_mod")["ba"].mean().sort_values(ascending=True).index, palette="viridis")
     # show the mean value in text next to the boxes
     for i, feature_mod in enumerate(df_all.groupby("feature_mod")["ba"].mean().sort_values(ascending=True).index):
         mean = df_all.query("feature_mod == @feature_mod")["ba"].mean()
@@ -74,5 +79,5 @@ if __name__ == "__main__":
     plt.title("Different feature modality types")
     plt.xticks(rotation=90)
     plt.tight_layout()
-    plt.savefig("figures_ucsf/figure_9_different_feature_modalities_480min.pdf")
+    plt.savefig(os.path.join(PATH_FIGURES, "figure_9_different_feature_modalities_480min_viridis_without_dots.pdf"))
     plt.show(block=True)

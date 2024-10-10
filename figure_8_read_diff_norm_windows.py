@@ -26,7 +26,7 @@ updrs_ = {
 }
 
 def read_pkg_out(PATH_):
-    with open(PATH_READ, "rb") as f:
+    with open(PATH_, "rb") as f:
         d_out = pickle.load(f)
 
     data = []
@@ -47,23 +47,29 @@ def read_pkg_out(PATH_):
 
 if __name__ == "__main__":
 
+    PATH_PER = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per"
+    PATH_FIGURES = r"/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/figures_ucsf"
+
     l_norms = []
     for norm_window in [5, 10, 20, 30, 60, 120, 180, 300, 480, 720, 960, 1200, 1440]:
         OUT_FILE = f"d_out_patient_across_class_{norm_window}.pkl"
-        PATH_READ = os.path.join("out_per", OUT_FILE)
+        PATH_READ = os.path.join(PATH_PER, OUT_FILE)
 
         df = read_pkg_out(PATH_READ)
+        df = df.query("loc == 'ecog_stn'")
         df["norm_window"] = norm_window
         l_norms.append(df)
-    PATH_READ = os.path.join("out_per", "d_out_patient_across_class.pkl")
+    PATH_READ = os.path.join(PATH_PER, "d_out_patient_across_class.pkl")
     df = read_pkg_out(PATH_READ)
+    df = df.query("loc == 'ecog_stn'")
     df["norm_window"] = 0
     l_norms.append(df)
 
     df_all = pd.concat(l_norms)
 
-    plt.figure()
-    sns.boxplot(x="norm_window", y="ba", data=df_all, showmeans=True)
+    plt.figure(figsize=(5, 5), dpi=300)
+    sns.boxplot(x="norm_window", y="ba", data=df_all, showmeans=True, showfliers=False, palette="viridis")
+    #sns.swarmplot(x="norm_window", y="ba", data=df_all, color="black", alpha=0.5, palette="viridis")
     # put the mean values as text on top of the boxplot
     means = df_all.groupby("norm_window")["ba"].mean()
     for i, mean in enumerate(means):
@@ -72,5 +78,6 @@ if __name__ == "__main__":
     plt.xlabel("Normalization window [min]")
     plt.ylabel("Balanced accuracy")
     plt.title("Different normalization windows")
-    plt.savefig("figures_ucsf/figure_8_read_diff_norm_windows.pdf")
+    plt.tight_layout()
+    plt.savefig(os.path.join(PATH_FIGURES, "figure_8_read_diff_norm_windows_viridis.pdf"))
     plt.show(block=True)

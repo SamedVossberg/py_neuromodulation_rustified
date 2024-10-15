@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import numpy as np
-#import matplotlib
-#matplotlib.use('macosx',force=True)
+import matplotlib
+matplotlib.use('qt5agg',force=True)
 from matplotlib import pyplot as plt
 from sklearn import linear_model, metrics, model_selection, ensemble
 from scipy import stats
@@ -12,9 +12,13 @@ warnings.filterwarnings('error')
 
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged"
 PATH_OUT = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length_all_ch"
-PATH_READ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out_10s_window_length" #py-neuro_out"
-PATH_PKG = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/pkg data"
+PATH_OUT = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_std_10s_window_length_all_ch"
 
+PATH_READ = "/Users/Timon/Documents/UCSF_Analysis/out/py-neuro_out_10s_window_length" #py-neuro_out"
+PATH_READ = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/py-neuro_out"
+
+PATH_PKG = "/Users/Timon/Documents/UCSF_Analysis/Sandbox/pkg data"
+PATH_PKG = '/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/pkg_data'
 
 def merge_df_with_pkg(sub_ = "rcs02l"):
     l_rcs = [pd.read_csv(os.path.join(PATH_READ, sub_, f)) for f in os.listdir(os.path.join(PATH_READ, sub_)) if f"{sub_}" in f and f.endswith(".csv")]

@@ -42,12 +42,15 @@ def run_channel(sub, ch, ch_idx):
             X = X[~idx_nan]
             y = y[np.array(~idx_nan)]
             
-            y_pr = model_selection.cross_val_predict(
-                model,
-                X,
-                y,
-                cv=model_selection.KFold(n_splits=3, shuffle=False),
-            )
+            try:
+                y_pr = model_selection.cross_val_predict(
+                    model,
+                    X,
+                    y,
+                    cv=model_selection.KFold(n_splits=3, shuffle=False),
+                )
+            except:
+                continue
 
 
             if CLASSIFICATION:

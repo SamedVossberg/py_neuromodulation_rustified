@@ -5,11 +5,12 @@ from joblib import Parallel, delayed
 import time
 from matplotlib import pyplot as plt
 
-PATH_IN = "/Users/Timon/Documents/UCSF_Analysis/out/merged_std_10s_window_length_all_ch"
+PATH_IN = "/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_rmap"
 PATH_OUT_BASE = "/Users/Timon/Documents/UCSF_Analysis/out/merged_normalized_10s_window_length"
+PATH_OUT_BASE = os.path.join(PATH_IN, "normed")
 
-def process_sub(sub, normalization_window, df_all):
-    PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window))
+def process_sub(sub, normalization_window, df_all, file):
+    PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window), file)
     df_sub = df_all.filter(pl.col("sub") == sub)
     
     # Ensure the output directory exists
@@ -76,27 +77,41 @@ def process_sub(sub, normalization_window, df_all):
         df_normed.write_csv(os.path.join(PATH_OUT, f"merged_normed_{sub}.csv"))
 
 if __name__ == "__main__":
-    df_all = pl.read_csv(os.path.join(PATH_IN, "all_merged_rmap_sel.csv"))
-    #df_all = df_all.with_columns(pl.col("pkg_dt").str.strptime(pl.Datetime, fmt="%Y-%m-%d %H:%M:%S"))
+    for file in os.listdir(PATH_IN):
+        if not file.endswith(".csv"):
+            continue
+        if os.path.exists(os.path.join(PATH_OUT_BASE, str(480), file[:-4], "all_merged_normed_rmap.csv")):
+            continue
+        df_all = pl.read_csv(os.path.join(PATH_IN, file))
+        
+        #df_all = df_all.with_columns(pl.col("pkg_dt").str.strptime(pl.Datetime, fmt="%Y-%m-%d %H:%M:%S"))
 
-    df_all = df_all.with_columns(pl.Series("pkg_dt", df_all["pkg_dt"].str.to_datetime()))
-    df_all = df_all.sort("pkg_dt")
+        df_all = df_all.with_columns(pl.Series("pkg_dt", df_all["pkg_dt"].str.to_datetime()))
+        df_all = df_all.sort("pkg_dt")
 
-    subs = df_all["sub"].unique().to_list()
+        subs = df_all["sub"].unique().to_list()
 
-    # [5, 10, 20, 30, 60, 120]
-    # np.array([3, 5, 8, 12, 16, 20, 24])*60
-    times_min = [480]
-    for normalization_window in times_min:
-        PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window))
-        if not os.path.exists(PATH_OUT):
-            os.makedirs(PATH_OUT)
-        time_start_comp = time.time()
-        #process_sub(subs[0], normalization_window, df_all)
-        Parallel(n_jobs=-1)(delayed(process_sub)(sub, normalization_window, df_all) for sub in subs)
-        time_end_comp = time.time()
-        print(f"Time for normalization {normalization_window}: {time_end_comp - time_start_comp}")
+        # [5, 10, 20, 30, 60, 120]
+        # np.array([3, 5, 8, 12, 16, 20, 24])*60
+        times_min = [480]
+        for normalization_window in times_min:
+            PATH_OUT = os.path.join(PATH_OUT_BASE, str(normalization_window), file[:-4])
+            if not os.path.exists(PATH_OUT):
+                os.makedirs(PATH_OUT)
+            time_start_comp = time.time()
+            #process_sub(subs[0], normalization_window, df_all)
+            Parallel(n_jobs=-1)(delayed(process_sub)(sub, normalization_window, df_all, file[:-4]) for sub in subs)
+            time_end_comp = time.time()
+            print(f"Time for normalization {normalization_window}: {time_end_comp - time_start_comp}")
 
-        files = [os.path.join(PATH_OUT, f) for f in os.listdir(PATH_OUT) if "merged_normed_" in f]
-        df_list = [pl.read_csv(f) for f in files]
-        pl.concat(df_list).write_csv(os.path.join(PATH_OUT, "all_merged_normed_rmap.csv"))
+            files = [os.path.join(PATH_OUT, f) for f in os.listdir(PATH_OUT) if "merged_normed_" in f]
+            df_list = [pl.read_csv(f) for f in files]
+
+            # convert every column to float except the last 11 columns of all dataframes in df_list
+            exclude_cols = ["pkg_dt", "sub", "pkg_dk", "pkg_bk", "pkg_tremor", "pkg_dk_normed", "pkg_bk_normed", "pkg_tremor_normed", "pkg_dk_class", "pkg_bk_class", "pkg_tremor_class"]
+            df_list = [
+                df.with_columns([pl.col(col).cast(pl.Float64) for col in df.columns if col not in exclude_cols])
+                for df in df_list
+            ]
+            
+            pl.concat(df_list).write_csv(os.path.join(PATH_OUT, "all_merged_normed_rmap.csv"))

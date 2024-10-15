@@ -8,8 +8,8 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 from sklearn.utils.class_weight import compute_class_weight
-import cebra
-from cebra import CEBRA
+#import cebra
+#from cebra import CEBRA
 from tqdm import tqdm
 from scipy import stats
 from catboost import CatBoostRegressor, Pool, CatBoostClassifier
@@ -33,7 +33,8 @@ if __name__ == "__main__":
 
     # df_all = pd.read_csv(os.path.join(PATH_READ, "all_merged_normed_rmap.csv"), index_col=0)
     df_all = pd.read_csv(os.path.join(PATH_READ, "all_merged_normed.csv"), index_col=0)
-
+    #df_all_new = pd.read_csv('/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_rmap/normed/480/all_ch_renamed_no_rmap/all_merged_normed_rmap.csv')
+    #df_all = pd.read_csv('/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_rmap/normed/480/rmap_ch_pkg_dk_class_True/all_merged_normed_rmap.csv')
     # drop all columns that contain "psd"
     
     #df_all = df_all[[c for c in df_all.columns if "psd" not in c]]
@@ -50,16 +51,16 @@ if __name__ == "__main__":
             
     d_out = {}
 
-    for CLASS in [False, True]:
+    for CLASS in [True]: # [False, True]
         d_out[CLASS] = {}
-        for label_idx, label_name in enumerate(["pkg_dk", "pkg_bk", "pkg_tremor"]):
+        for label_idx, label_name in enumerate(["pkg_dk"]): #  "pkg_bk", "pkg_tremor"
 
             d_out[CLASS][label_name] = {}
 
             mask = ~df_all[label_name].isnull()
             df_all = df_all[mask].copy()
             
-            for loc_ in ["ecog_stn", "ecog", "stn"]:
+            for loc_ in ["ecog_stn", ]:  # "ecog", "stn"
                 #if loc_ != "ecog":
                 #    continue
                 d_out[CLASS][label_name][loc_] = {}
@@ -140,30 +141,30 @@ if __name__ == "__main__":
                         X_train = pca.fit_transform(X_train)
                         X_test = pca.transform(X_test)
                         model = linear_model.LogisticRegression(class_weight="balanced")
-                    elif MODEL_NAME == "CEBRA":
+                    # elif MODEL_NAME == "CEBRA":
 
-                        cebra_model = CEBRA(
-                            model_architecture = "offset1-model",#'offset40-model-4x-subsample', # previously used: offset1-model-v2'    # offset10-model  # my-model
-                            batch_size = 100,
-                            temperature_mode="auto",
-                            learning_rate = 0.005,
-                            max_iterations = 1000,
-                            #time_offsets = 10,
-                            output_dimension = 3,  # check 10 for better performance
-                            device = "mps",
+                    #     cebra_model = CEBRA(
+                    #         model_architecture = "offset1-model",#'offset40-model-4x-subsample', # previously used: offset1-model-v2'    # offset10-model  # my-model
+                    #         batch_size = 100,
+                    #         temperature_mode="auto",
+                    #         learning_rate = 0.005,
+                    #         max_iterations = 1000,
+                    #         #time_offsets = 10,
+                    #         output_dimension = 3,  # check 10 for better performance
+                    #         device = "mps",
                         #conditional="time_delta",  # assigning CEBRA to sample temporally and behaviorally for reference
-                            hybrid=False,
-                            verbose = True
-                        )
+#                            hybrid=False,
+#                             verbose = True
+#                         )
 
-                        cebra_model.fit(X_train, y_train)
-                        X_train_emb = cebra_model.transform(X_train)
-                        X_test_emb = cebra_model.transform(X_test)
-                        cebra.plot_loss(cebra_model)
-                        cebra.plot_temperature(cebra_model)
-                        cebra.plot_embedding(X_train_emb, cmap="viridis", markersize=10, alpha=0.5, embedding_labels=y_train.T) # embedding_labels=y_train
+#                         cebra_model.fit(X_train, y_train)
+#                         X_train_emb = cebra_model.transform(X_train)
+#                         X_test_emb = cebra_model.transform(X_test)
+#                         cebra.plot_loss(cebra_model)
+#                         cebra.plot_temperature(cebra_model)
+#                         cebra.plot_embedding(X_train_emb, cmap="viridis", markersize=10, alpha=0.5, embedding_labels=y_train.T) # embedding_labels=y_train
 
-                        model = linear_model.LogisticRegression(class_weight="balanced")
+#                         model = linear_model.LogisticRegression(class_weight="balanced")
 
                     model.fit(X_train, y_train)
 
@@ -217,6 +218,7 @@ if __name__ == "__main__":
                 if PLT_:
                     pdf_pages.close()
 
-    SAVE_NAME = "LOSO_ALL_LABELS_ALL_GROUPS.pkl"
-    with open(os.path.join(PATH_PER, SAVE_NAME), "wb") as f:
+    SAVE_NAME = "LOHO_ALL_LABELS_ALL_GROUPS.pkl"
+    PATH_SAVE = '/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/features/merged_rmap/normed/480/rmap_ch_pkg_dk_class_True'
+    with open(os.path.join(PATH_SAVE, SAVE_NAME), "wb") as f:
         pickle.dump(d_out, f)

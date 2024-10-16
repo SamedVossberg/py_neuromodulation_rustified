@@ -147,9 +147,9 @@ if __name__ == "__main__":
     for label_idx, label in enumerate(label_names):
         for CLASS_Idx, CLASS in enumerate(CLASSES):
             for comb_dura_idx, dur in enumerate(comb_durations):
-                if cnt == idx_:
-                    compute_duration(dur, CLASS, label)
-                cnt = cnt + 1
+                #if cnt == idx_:
+                compute_duration(dur, CLASS, label)
+                #cnt = cnt + 1
 
     
     #for duration in comb_durations:

@@ -8,7 +8,7 @@ import pickle
 PATH_PER = '/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/out_per'
 PATH_FIGURE = '/Users/Timon/Library/CloudStorage/OneDrive-Charité-UniversitätsmedizinBerlin/Shared Documents - ICN Data World/General/Data/UCSF_OLARU/figures_ucsf'
 
-for label in ["tremor", "DK", "bk"]:
+for label in ["bk", "tremor", "DK",]:
     files = [f for f in os.listdir(PATH_PER) if "LOHO" in f and"_min.pkl" in f and "_"+label+"_" in f]
     df_ = []
     for f in files:
@@ -37,7 +37,8 @@ for label in ["tremor", "DK", "bk"]:
 
     df = pd.concat(df_, axis=0)
     # clip the balanced accuracy to 0.5 and 1
-    df["per"] = np.clip(df["per"], 0.5, 1)
+    if label != "bk":
+        df["per"] = np.clip(df["per"], 0.5, 1)
 
     df.groupby("dur")["per"].mean()
 
@@ -52,14 +53,21 @@ for label in ["tremor", "DK", "bk"]:
         plt.plot(durations / 60, df_sub["per"], color="gray", alpha=0.2)
         sub_per.append(df_sub["per"].values)
     plt.xlabel("Duration [h]")
-    plt.ylabel("Balanced accuracy")
+    if label == "bk":
+        plt.ylabel("Correlation coefficient")
+    else:
+        plt.ylabel("Balanced accuracy")
     # plot the mean accuracy for each duration
     plt.plot(durations / 60, np.array(sub_per).mean(axis=0), marker="o", linestyle="-", color="black")
+    # write the mean accuracy on top of the line
+    for i, dur in enumerate(durations):
+        plt.text(durations[i] / 60, np.array(sub_per).mean(axis=0)[i], f"{np.round(np.array(sub_per).mean(axis=0)[i], 2)}", ha="center", va="bottom")
+    
     plt.xscale('log')
-    plt.title("LOHO PKG DK CLASS CV different training duration")
+    plt.title(f"LOHO PKG BK CV different training duration")
     plt.tight_layout()
     plt.savefig(os.path.join(PATH_FIGURE, f"LOHO_different_training_duration_sub_{label}.pdf"))
-    plt.show(block=True)
+    #plt.show(block=True)
 
 plt.figure(figsize=(10, 5))
 sns.boxplot(data=df, x="dur", y="per", palette="viridis", showfliers=False, showmeans=True)

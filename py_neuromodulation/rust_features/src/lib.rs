@@ -1,33 +1,29 @@
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 
-use numpy::{PyArrayDyn, ToPyArray};
-
+use numpy::{IntoPyArray, PyArrayDyn};
 use ndarray::{ArrayD, Array2, Array3, Axis};
-
 use num_complex::Complex;
-
 use rustfft::FftPlanner;
-
 use rayon::prelude::*;
 
 #[pyfunction]
-fn calculate_bispectra(
-    data: &PyArrayDyn<f64>,
-) -> PyResult<PyObject> {
+fn calculate_bispectra(data: &PyArrayDyn<f64>) -> PyResult<PyObject> {
     let data_array: ArrayD<f64> = data.readonly().as_array().to_owned();
 
     // Process data
-    let result: ArrayD<f64> = bispectra_calculation(&data_array);
+    let result: ArrayD<Complex<f64>> = bispectra_calculation(&data_array);
 
     // Convert the result back to PyObject (as NumPy array)
-    let py_result: PyObject = Python::with_gil(|py| result.to_pyarray(py).into_py(py));
+    let py_result = Python::with_gil(|py| {
+        result.into_pyarray(py).to_owned().into_py(py)
+    });
 
     Ok(py_result)
 }
 
 // Implement the actual bispectra calculation
-fn bispectra_calculation(data: &ArrayD<f64>) -> ArrayD<f64> {
+fn bispectra_calculation(data: &ArrayD<f64>) -> ArrayD<Complex<f64>> {
     assert_eq!(data.ndim(), 2, "Input data must be a 2D array");
 
     let shape = data.shape();
@@ -64,7 +60,7 @@ fn bispectra_calculation(data: &ArrayD<f64>) -> ArrayD<f64> {
     let N = signal_length;
     let half_N = N / 2;
 
-    let mut bispectrum = Array3::<f64>::zeros((num_channels, half_N, half_N));
+    let mut bispectrum = Array3::<Complex<f64>>::zeros((num_channels, half_N, half_N));
 
     bispectrum
         .axis_iter_mut(Axis(0))
@@ -78,7 +74,7 @@ fn bispectra_calculation(data: &ArrayD<f64>) -> ArrayD<f64> {
                     let X_f2 = data_complex[[s, f2]];
                     let X_f3_conj = data_complex[[s, f3]].conj();
                     let triple_product = X_f1 * X_f2 * X_f3_conj;
-                    bispectrum_s[[f1, f2]] = triple_product.norm();
+                    bispectrum_s[[f1, f2]] = triple_product;
                 }
             }
         });

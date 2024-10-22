@@ -1,0 +1,12 @@
+[package]
+name = "bispectra_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pyo3 = { version = "0.21.0", features = ["extension-module"] }
+numpy = "0.21.0"
+ndarray = { version = "0.15.6", features = ["rayon"] }
+rayon = "1.7"
+rustfft = "6.2.0"
+num-complex = "0.4.3"

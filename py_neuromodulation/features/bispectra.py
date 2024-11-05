@@ -89,12 +89,14 @@ class Bispectra(NMFeature):
         self.min_freq = min(
             self.settings.f1s.frequency_low_hz, self.settings.f2s.frequency_low_hz
         )
+        print()
         self.max_freq = max(
             self.settings.f1s.frequency_high_hz, self.settings.f2s.frequency_high_hz
         )
 
     def calc_feature(self, data: np.ndarray) -> dict:
-        """Calculate bispectrum features using the Rust implementation."""
+        """Calculate bispectrum features using the Rust implementation.
+        Detecting the quadratic phase coupling between distinct frequency components in neural signals."""
         return self.calc_feature_rust(data)
 
     def calc_feature_python(self, data: np.ndarray) -> dict:
@@ -152,7 +154,6 @@ class Bispectra(NMFeature):
                         ] = FEATURE_DICT[bispectrum_feature](spectrum_ch)
 
         end_time = time.time()
-        # Optionally, print the computation time
         # print(f"Python calculation took {end_time - start_time:.4f} seconds")
         return feature_results
 
@@ -166,7 +167,7 @@ class Bispectra(NMFeature):
         freqs = freqs[:half_N]
 
         bispectrum = rust_features.calculate_bispectra(data)
-        bispectrum = bispectrum.astype(np.complex128)  
+        bispectrum = bispectrum.astype(np.complex64)
 
         f_spectrum_range = freqs[
             (freqs >= self.min_freq) & (freqs <= self.max_freq)
@@ -199,7 +200,6 @@ class Bispectra(NMFeature):
                         ] = feature_value
 
         end_time = time.time()
-        # Optionally, print the computation time
         # print(f"Rust calculation took {end_time - start_time:.4f} seconds")
         return feature_results
 

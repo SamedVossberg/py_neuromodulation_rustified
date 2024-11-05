@@ -89,7 +89,6 @@ class Bispectra(NMFeature):
         self.min_freq = min(
             self.settings.f1s.frequency_low_hz, self.settings.f2s.frequency_low_hz
         )
-        print()
         self.max_freq = max(
             self.settings.f1s.frequency_high_hz, self.settings.f2s.frequency_high_hz
         )
@@ -97,13 +96,17 @@ class Bispectra(NMFeature):
     def calc_feature(self, data: np.ndarray) -> dict:
         """Calculate bispectrum features using the Rust implementation.
         Detecting the quadratic phase coupling between distinct frequency components in neural signals."""
-        return self.calc_feature_rust(data)
+        overall_start_time = time.time()
+        results = self.calc_feature_rust(data)
+        overall_end_time = time.time()
+        print(f"Batch calculation took {overall_end_time - overall_start_time:.5f} seconds")
+        return results
 
     def calc_feature_python(self, data: np.ndarray) -> dict:
         """Calculate bispectrum features using the Python implementation."""
         from pybispectra import compute_fft, WaveShape
 
-        start_time = time.time()
+        # start_time = time.time()
 
         fft_coeffs, freqs = compute_fft(
             data=np.expand_dims(data, axis=0),
@@ -153,7 +156,6 @@ class Bispectra(NMFeature):
                             f"{ch_name}_Bispectrum_{component}_{bispectrum_feature}_whole_fband_range"
                         ] = FEATURE_DICT[bispectrum_feature](spectrum_ch)
 
-        end_time = time.time()
         # print(f"Python calculation took {end_time - start_time:.4f} seconds")
         return feature_results
 
@@ -163,15 +165,13 @@ class Bispectra(NMFeature):
 
         N = data.shape[1]
         freqs = np.fft.rfftfreq(N, d=1 / self.sfreq)
-        half_N = N // 2
-        freqs = freqs[:half_N]
+        # Adjust frequency indices to match the frequencies of interest
+        freq_start = 5
+        freq_end = 35
+        freqs_of_interest = freqs[freq_start : freq_end + 1]
 
         bispectrum = rust_features.calculate_bispectra(data)
         bispectrum = bispectrum.astype(np.complex64)
-
-        f_spectrum_range = freqs[
-            (freqs >= self.min_freq) & (freqs <= self.max_freq)
-        ]
 
         feature_results = {}
         for ch_idx, ch_name in enumerate(self.ch_names):
@@ -182,7 +182,7 @@ class Bispectra(NMFeature):
 
                 for fb in self.settings.frequency_bands:
                     fb_range = self.frequency_ranges_hz[fb]
-                    range_ = (freqs >= fb_range[0]) & (freqs <= fb_range[1])
+                    range_ = (freqs_of_interest >= fb_range[0]) & (freqs_of_interest <= fb_range[1])
 
                     data_bs = spectrum_ch[np.ix_(range_, range_)]
 
@@ -192,16 +192,18 @@ class Bispectra(NMFeature):
                             f"{ch_name}_Bispectrum_{component}_{bispectrum_feature}_{fb}"
                         ] = feature_value
 
-                if self.settings.compute_features_for_whole_fband_range:
-                    for bispectrum_feature in self.used_features:
-                        feature_value = FEATURE_DICT[bispectrum_feature](spectrum_ch)
-                        feature_results[
-                            f"{ch_name}_Bispectrum_{component}_{bispectrum_feature}_whole_fband_range"
-                        ] = feature_value
+            if self.settings.compute_features_for_whole_fband_range:
+                for bispectrum_feature in self.used_features:
+                    feature_value = FEATURE_DICT[bispectrum_feature](spectrum_ch)
+                    feature_results[
+                        f"{ch_name}_Bispectrum_{component}_{bispectrum_feature}_whole_fband_range"
+                    ] = feature_value
 
         end_time = time.time()
         # print(f"Rust calculation took {end_time - start_time:.4f} seconds")
         return feature_results
+
+
 
     def compare_results(self, data: np.ndarray):
         """Compare the results of the Python and Rust implementations."""
